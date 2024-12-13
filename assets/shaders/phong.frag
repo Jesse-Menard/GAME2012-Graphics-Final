@@ -22,13 +22,16 @@ uniform float u_ambientFactor;
 uniform float u_diffuseFactor;
 uniform float u_specularPower;
 
-uniform sampler2D u_tex;
 uniform float u_attenuationScale;
 uniform float u_fov;
 uniform float u_fovBlend;
 uniform int u_allowDirectionLight;
 uniform int u_allowPointLight;
 uniform int u_allowSpotLight;
+uniform int u_normalToggle;
+
+uniform sampler2D u_tex;
+uniform sampler2D u_normalMap;
 
 vec3 phong(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower)
 {
@@ -92,15 +95,19 @@ vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 li
 
 void main()
 {
-    vec3 model = vec3(texture(u_tex, tcoord));
+    vec3 model = texture(u_tex, tcoord).rgb;
+    vec3 normalMap = texture(u_normalMap, tcoord).rgb;
+    normalMap = normalize(normalMap * 2.0 - 1.0);
     vec3 lighting;
+    //  if(u_normalToggle > 0)
+    //      normal *= normalMap;
 
     // The best booleans
     if(u_allowDirectionLight > 0)
         lighting += direction_light(u_lightDirection, normal, u_cameraPosition, u_directionLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
     
     if(u_allowPointLight > 0)
-        lighting += point_light(position, normal, u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
+        lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap * normal) , u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
 
     if(u_allowSpotLight > 0)
         lighting += spot_light(position, u_spotLightDirection, normal, u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);

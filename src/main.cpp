@@ -121,33 +121,12 @@ int main(void)
     // Flipping our image vertically is the best way to solve this as it ensures a "one-stop" solution (rather than an in-shader solution).
     stbi_set_flip_vertically_on_load(true);
 
-    // Note that generating an image ourselves is intuitive in OpenGL's space since it matches 2D array coordinates!
-    int texGradientWidth = 256;
-    int texGradientHeight = 256;
-    Pixel* pixelsGradient = (Pixel*)malloc(texGradientWidth * texGradientHeight * sizeof(Pixel));
-    for (int y = 0; y < texGradientHeight; y++)
-    {
-        for (int x = 0; x < texGradientWidth; x++)
-        {
-            float u = x / (float)texGradientWidth;
-            float v = y / (float)texGradientHeight;
-
-            Pixel pixel;
-            pixel.r = u * 255.0f;
-            pixel.g = v * 255.0f;
-            pixel.b = 255;
-            pixel.a = 255;
-
-            pixelsGradient[y * texGradientWidth + x] = pixel;
-        }
-    }
-
     // Step 1: Load image from disk to CPU
     int texPotWidth = 0;
     int texPotHeight = 0;
     int texPotBaseChannels = 0;
     stbi_uc* pixelsPotBase = stbi_load("./assets/textures/POT_base.png", &texPotWidth, &texPotHeight, &texPotBaseChannels, 0);
-
+    
     // Step 2: Upload image from CPU to GPU
     GLuint texPotBase = GL_NONE;
     glGenTextures(1, &texPotBase);
@@ -158,45 +137,43 @@ int main(void)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texPotWidth, texPotHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsPotBase);
     stbi_image_free(pixelsPotBase);
-    pixelsPotBase = nullptr;
+    //pixelsPotBase = nullptr;
 
-    GLuint texGradient = GL_NONE;
-    glGenTextures(1, &texGradient);
-    glBindTexture(GL_TEXTURE_2D, texGradient);
+    // Step 1: Load image from disk to CPU
+    int texWallWidth = 0;
+    int texWallHeight = 0;
+    int texWallBaseChannels = 0;
+    stbi_uc* pixelsWallBase = stbi_load("./assets/textures/WallDiffuse.jpg", &texWallWidth, &texWallHeight, &texWallBaseChannels, 0);
+
+    // Step 2: Upload image from CPU to GPU
+    GLuint texWallBase = GL_NONE;
+    glGenTextures(1, &texWallBase);
+    glBindTexture(GL_TEXTURE_2D, texWallBase);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texGradientWidth, texGradientHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsGradient);
-    free(pixelsGradient);
-    pixelsGradient = nullptr;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWallWidth, texWallHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelsWallBase);
+    stbi_image_free(pixelsWallBase);
+    pixelsWallBase = nullptr;
 
-    const char* skyboxPath[6] =
-    {
-        "./assets/textures/sky_x+.png",
-        "./assets/textures/sky_x-.png",
-        "./assets/textures/sky_y+.png",
-        "./assets/textures/sky_y-.png",
-        "./assets/textures/sky_z+.png",
-        "./assets/textures/sky_z-.png"
-    };
-    GLuint texSkybox = GL_NONE;
-    glGenTextures(1, &texSkybox);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, texSkybox);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    stbi_set_flip_vertically_on_load(false);
-    for (int i = 0; i < 6; i++)
-    {
-        int w, h, c;
-        stbi_uc* pixels = stbi_load(skyboxPath[i], &w, &h, &c, 0);
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        stbi_image_free(pixels);
-    }
-    stbi_set_flip_vertically_on_load(true);
+    // Step 1: Load image from disk to CPU
+    int texWallNormalWidth = 0;
+    int texWallNormalHeight = 0;
+    int texWallNormalBaseChannels = 0;
+    stbi_uc* pixelsWallNormal = stbi_load("./assets/textures/WallNormal.jpg", &texWallNormalWidth, &texWallNormalHeight, &texWallNormalBaseChannels, 0);
+    
+    // Step 2: Upload image from CPU to GPU
+    GLuint texWallNormal = GL_NONE;
+    glGenTextures(1, &texWallNormal);
+    glBindTexture(GL_TEXTURE_2D, texWallNormal);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWallNormalWidth, texWallNormalHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelsWallNormal);
+    stbi_image_free(pixelsWallNormal);
+    pixelsWallNormal = nullptr;
 
     int object = 0;
     printf("Object %i\n", object + 1);
@@ -214,10 +191,10 @@ int main(void)
     float camYaw = 0;
     float panScale = 0.25f;
     Vector3 frontView = V3_FORWARD;
+    float planeRotation = 0;
 
     // Whether we render the imgui demo widgets
     bool imguiDemo = false;
-    bool texToggle = false;
     bool camToggle = true;
 
     Mesh potMesh, cubeMesh, sphereMesh, planeMesh;
@@ -229,12 +206,12 @@ int main(void)
     Vector3 planeColor = { 0.3, 0.3, 0.3 };
 
     Vector3 directionLightPosition = { 10.0f, 10.0f, 10.0f };
-    Vector3 directionLightColor = { 0.0f, 0.0f, 1.0f };
+    Vector3 directionLightColor = { 1.0f, 1.0f, 1.0f };
     Vector3 directionLightDirection = CalcFacingVector3(Vector3{ 0 }, directionLightPosition);
-    int allowDirectionLight = true;
+    int allowDirectionLight = false;
 
-    Vector3 pointLightPosition = { 2.0f, 1.5f, 0.0f };
-    Vector3 pointLightColor = { 1.0f, 1.0f, 0.0f };
+    Vector3 pointLightPosition = { 3.0f, 3.0f, 2.0f };
+    Vector3 pointLightColor = { 1.0f, 1.0f, 1.0f };
     int allowPointLight = true;
 
     Vector3 spotLightPosition = { 0.0f, 3.5f, 0.0f };
@@ -243,14 +220,16 @@ int main(void)
     Vector3 spotLightDirection = CalcFacingVector3(spotLightTarget, spotLightPosition);
     float spotLightFOV = 18;
     float spotLightFOVBlend = 6;
-    int allowSpotLight = true;
+    int allowSpotLight = false;
+    int normalToggle = false;
 
-    float lightRadius = 1.0f;
+    float lightRadius = 2.5f;
     float lightAngle = 90.0f * DEG2RAD;
 
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
     float specularPower = 64.0f;
+    float attenuationScale = 0.0f;
 
     // Render looks weird cause this isn't enabled, but its causing unexpected problems which I'll fix soon!
     glEnable(GL_DEPTH_TEST);
@@ -316,9 +295,6 @@ int main(void)
 
         if (IsKeyPressed(GLFW_KEY_I))
             imguiDemo = !imguiDemo;
-
-        if (IsKeyPressed(GLFW_KEY_T))
-            texToggle = !texToggle;
         
         if (IsKeyPressed(GLFW_KEY_C))
             camToggle = !camToggle;
@@ -402,9 +378,10 @@ int main(void)
         GLint u_world = -2;
         GLint u_mvp = -2;
         GLint u_tex = -2;
+        GLint u_normalMap = -2;
         GLint u_textureSlots[2]{ -2, -2 };
         GLuint shaderProgram = GL_NONE;
-        GLuint texture = texToggle ? texGradient : texPotBase;
+        GLuint texture = texPotBase;
         GLint u_t = GL_NONE;
 
         GLint u_cameraPosition = -2;
@@ -422,6 +399,7 @@ int main(void)
         GLint u_ambientFactor = -2;
         GLint u_diffuseFactor = -2;
         GLint u_SpecularPower = -2;
+        GLint u_attenuationScale = -2;
 
         GLint u_allowDirectionLight = -2;
         GLint u_allowPointLight = -2;
@@ -429,18 +407,21 @@ int main(void)
         GLint u_fov = -2;
         GLint u_fovBlend = -2;
 
-        // Extra practice: render the skybox here and it should be applied to cases 1-5!
-        // You may need to tweak a few things like matrix values and depth state in order for everything to work correctly.
-        // Left side: object with texture applied to it
-        // Right side: the coordinates our object uses to sample its texture
-        // -----------------------------------------------------------
-        pointLightPosition = Multiply(pointLightPosition, RotateY(sin(dt * 4)));
+        GLint u_normalToggle = -2;
+
+        // ------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------
+
+        pointLightPosition = Multiply(pointLightPosition, RotateZ(sin(dt * 4)));
+        world = Translate(-0.5, -0.5, 0) * RotateY(DEG2RAD * planeRotation) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
 
         shaderProgram = shaderPhong;
         glUseProgram(shaderProgram);
         mvp = world * view * proj;
         
         normal = Transpose(Invert(world));
+
         
         u_normal = glGetUniformLocation(shaderProgram, "u_normal");
         u_world = glGetUniformLocation(shaderProgram, "u_world");
@@ -459,6 +440,8 @@ int main(void)
         u_ambientFactor = glGetUniformLocation(shaderProgram, "u_ambientFactor");
         u_diffuseFactor = glGetUniformLocation(shaderProgram, "u_diffuseFactor");
         u_SpecularPower = glGetUniformLocation(shaderProgram, "u_specularPower");
+        u_attenuationScale = glGetUniformLocation(shaderProgram, "u_attenuationScale");
+        u_normalToggle = glGetUniformLocation(shaderProgram, "u_normalToggle");
         
         u_allowDirectionLight = glGetUniformLocation(shaderProgram, "u_allowDirectionLight");
         u_allowPointLight = glGetUniformLocation(shaderProgram, "u_allowPointLight");
@@ -485,6 +468,8 @@ int main(void)
         glUniform1f(u_ambientFactor, ambientFactor);
         glUniform1f(u_diffuseFactor, diffuseFactor);
         glUniform1f(u_SpecularPower, specularPower);
+        glUniform1f(u_attenuationScale, attenuationScale);
+        glUniform1i(u_normalToggle, normalToggle);
 
         glUniform1i(u_allowDirectionLight, allowDirectionLight);
         glUniform1i(u_allowPointLight, allowPointLight);
@@ -498,12 +483,29 @@ int main(void)
         glUniform1f(u_fov, spotLightFOV);
         glUniform1f(u_fovBlend, spotLightFOVBlend);
 
-        glUniform1i(u_tex, 0);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texPotBase);
+        u_normalMap = glGetUniformLocation(shaderProgram, "u_normalMap");
+        u_tex = glGetUniformLocation(shaderProgram, "u_tex");
 
-        DrawMesh(potMesh);
+        glUniform1i(u_normalMap, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texWallNormal);
+
+        glUniform1i(u_tex, 1);
+        glActiveTexture(GL_TEXTURE0 + 1); // this caught me up for so long.. lol
+        glBindTexture(GL_TEXTURE_2D, texWallBase);
+
+        DrawMesh(planeMesh);
+
+        //  glUniform1i(u_tex, 0);
+        //  glActiveTexture(GL_TEXTURE0);
+        //  glBindTexture(GL_TEXTURE_2D, texPotBase);
+
+        //  DrawMesh(potMesh);
         
+        //shaderProgram = shaderPhong;
+        //glUseProgram(shaderProgram);
+
+
         if (allowDirectionLight)
         {
             shaderProgram = shaderUniformColor;
@@ -546,21 +548,12 @@ int main(void)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             DrawMesh(sphereMesh);
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
-        shaderProgram = shaderUniformColor;
-        glUseProgram(shaderProgram);
-        world = RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
-        mvp = world * view * proj;
-        u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
-        u_color = glGetUniformLocation(shaderProgram, "u_color");
-        glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
-        glUniform3fv(u_color, 1, &planeColor.x);
-
-        DrawMesh(planeMesh);            
+        }         
 
 
-        // ----------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -572,20 +565,30 @@ int main(void)
             ImGui::SliderFloat3("Camera Position", &camPos.x, -10.0f, 10.0f);
             ImGui::SliderFloat3("Directional Light Position", &directionLightPosition.x, -10.0f, 10.0f);
             ImGui::SliderFloat3("Directional Light Color", &directionLightColor.x, 0.0f, 1.0f);
+            ImGui::NewLine();
+            ImGui::SliderFloat3("Point Light Position", &pointLightPosition.x, -10.0f, 10.0f);
             ImGui::SliderFloat3("Point Light Color", &pointLightColor.x, 0.0f, 1.0f);
+            ImGui::NewLine();
             ImGui::SliderFloat3("Spot Light Position", &spotLightPosition.x, -10.0f, 10.0f);
             ImGui::SliderFloat3("Spot Light Color", &spotLightColor.x, 0.0f, 1.0f);
             ImGui::SliderFloat("Spot Light FOV", &spotLightFOV, 0.0f, 180.0f);
             ImGui::SliderFloat("Spot Light FOV Blend", &spotLightFOVBlend, 0.0f, 180.0f - spotLightFOV);
+            ImGui::NewLine();
             ImGui::SliderFloat("Light Radius", &lightRadius, 0.25f, 5.0f);
             ImGui::SliderAngle("Light Angle", &lightAngle);
             ImGui::Checkbox("Direction Light", (bool*)&allowDirectionLight); ImGui::SameLine();
             ImGui::Checkbox("Point Light", (bool*)&allowPointLight); ImGui::SameLine();
             ImGui::Checkbox("Spot Light", (bool*) & allowSpotLight);
+            ImGui::NewLine();
+
+            ImGui::SliderFloat("Plane Rotation", &planeRotation, 0.0f, 360.0f);
+            ImGui::NewLine();
 
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular", &specularPower, 8.0f, 256.0f);
+            ImGui::SliderFloat("Attenuation", &attenuationScale, 0.0f, 1.0f);
+            ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle);
 
             ImGui::RadioButton("Orthographic", (int*)&projection, 0); ImGui::SameLine();
             ImGui::RadioButton("Perspective", (int*)&projection, 1);
