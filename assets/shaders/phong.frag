@@ -31,6 +31,7 @@ uniform int u_allowSpotLight;
 uniform int u_normalToggle;
 
 uniform sampler2D u_tex;
+uniform sampler2D u_spec;
 uniform sampler2D u_normalMap;
 
 vec3 phong(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower)
@@ -107,7 +108,7 @@ void main()
         lighting += direction_light(u_lightDirection, normal, u_cameraPosition, u_directionLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
     
     if(u_allowPointLight > 0)
-        lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap * normal) , u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
+        lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap) , u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
 
     if(u_allowSpotLight > 0)
         lighting += spot_light(position, u_spotLightDirection, normal, u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);

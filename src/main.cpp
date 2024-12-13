@@ -157,6 +157,7 @@ int main(void)
     stbi_image_free(pixelsWallBase);
     pixelsWallBase = nullptr;
 
+
     // Step 1: Load image from disk to CPU
     int texWallNormalWidth = 0;
     int texWallNormalHeight = 0;
@@ -174,6 +175,25 @@ int main(void)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWallNormalWidth, texWallNormalHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelsWallNormal);
     stbi_image_free(pixelsWallNormal);
     pixelsWallNormal = nullptr;
+
+
+    // Step 1: Load image from disk to CPU
+    int texWallSpecWidth = 0;
+    int texWallSpecHeight = 0;
+    int texWallSpecBaseChannels = 0;
+    stbi_uc* pixelsWallSpec = stbi_load("./assets/textures/WallSpec.jpg", &texWallSpecWidth, &texWallSpecHeight, &texWallSpecBaseChannels, 0);
+    
+    // Step 2: Upload image from CPU to GPU
+    GLuint texWallSpec = GL_NONE;
+    glGenTextures(1, &texWallSpec);
+    glBindTexture(GL_TEXTURE_2D, texWallSpec);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWallSpecWidth, texWallSpecHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelsWallSpec);
+    stbi_image_free(pixelsWallSpec);
+    pixelsWallSpec = nullptr;
 
     int object = 0;
     printf("Object %i\n", object + 1);
@@ -298,6 +318,9 @@ int main(void)
         
         if (IsKeyPressed(GLFW_KEY_C))
             camToggle = !camToggle;
+        
+        if (IsKeyPressed(GLFW_KEY_N))
+            normalToggle = !normalToggle;
 
         if (!camToggle)
         {
@@ -413,7 +436,7 @@ int main(void)
         // ------------------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------------------
 
-        pointLightPosition = Multiply(pointLightPosition, RotateZ(sin(dt * 4)));
+        pointLightPosition = Multiply(pointLightPosition, RotateZ(sin(dt * 15)));
         world = Translate(-0.5, -0.5, 0) * RotateY(DEG2RAD * planeRotation) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
 
         shaderProgram = shaderPhong;
@@ -448,8 +471,6 @@ int main(void)
         u_allowSpotLight = glGetUniformLocation(shaderProgram, "u_allowSpotLight");
         u_fov = glGetUniformLocation(shaderProgram, "u_fov");
         u_fovBlend = glGetUniformLocation(shaderProgram, "u_fovBlend");
-
-        u_tex = glGetUniformLocation(shaderProgram, "u_tex");
         
         glUniformMatrix3fv(u_normal, 1, GL_FALSE, ToFloat9(normal).v);
         glUniformMatrix4fv(u_world, 1, GL_FALSE, ToFloat16(world).v);
@@ -493,6 +514,13 @@ int main(void)
         glUniform1i(u_tex, 1);
         glActiveTexture(GL_TEXTURE0 + 1); // this caught me up for so long.. lol
         glBindTexture(GL_TEXTURE_2D, texWallBase);
+
+        u_tex = glGetUniformLocation(shaderProgram, "u_Spec");
+
+        glUniform1i(u_tex, 2);
+        glActiveTexture(GL_TEXTURE0 + 2); // this caught me up for so long.. lol
+        glBindTexture(GL_TEXTURE_2D, texWallSpec);
+
 
         DrawMesh(planeMesh);
 
@@ -587,7 +615,7 @@ int main(void)
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Specular", &specularPower, 8.0f, 256.0f);
-            ImGui::SliderFloat("Attenuation", &attenuationScale, 0.0f, 1.0f);
+            ImGui::SliderFloat("Attenuation", &attenuationScale, 0.0f, 5.0f);
             ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle);
 
             ImGui::RadioButton("Orthographic", (int*)&projection, 0); ImGui::SameLine();
