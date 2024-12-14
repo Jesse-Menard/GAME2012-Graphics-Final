@@ -87,8 +87,10 @@
     <ClCompile Include="src\imgui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\Light.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
+    <ClCompile Include="src\RenderObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\imgui\imconfig.h" />
@@ -100,8 +102,10 @@
     <ClInclude Include="src\imgui\imstb_rectpack.h" />
     <ClInclude Include="src\imgui\imstb_textedit.h" />
     <ClInclude Include="src\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\Light.h" />
     <ClInclude Include="src\Math.h" />
     <ClInclude Include="src\Mesh.h" />
+    <ClInclude Include="src\RenderObject.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\shaders\default.vert" />

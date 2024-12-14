@@ -33,6 +33,20 @@ uniform sampler2D u_tex;
 uniform sampler2D u_spec;
 uniform sampler2D u_normalMap;
 
+//  struct Light {
+//      vec3 position,
+//      vec3 direction,
+//      vec3 color,
+//      int type, // 0 = DIR, 1 = POINT, 2 = SPOT
+//      
+//      float specularScale;
+//  	float attenuationScale;
+//  	float intensity;
+//  	float FOV;
+//  	float FOVbloom;
+//  }
+//  uniform Light u_light;
+
 vec3 phong(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower)
 {
     vec3 N = normalize(normal);

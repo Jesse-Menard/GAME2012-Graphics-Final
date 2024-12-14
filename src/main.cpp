@@ -1,6 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "Mesh.h"
+#include "RenderObject.h"
+#include "Light.h"
 
 // TODO -- Texture.h & Texture.cpp during lab, show result next lexture
 #define STB_IMAGE_IMPLEMENTATION
@@ -37,6 +39,7 @@ void Print(Matrix m);
 
 Vector3 CalcFacingVector3(const Vector3 target, const Vector3 source);
 
+std::vector<Light> lights;
 
 int main(void)
 {
@@ -164,6 +167,10 @@ int main(void)
     Vector3 pointLightPosition = { 3.0f, 3.0f, 2.0f };
     Vector3 pointLightColor = { 1.0f, 1.0f, 1.0f };
     int allowPointLight = true;
+
+    lights.resize(20);
+
+    lights[0] = Light{pointLightPosition, pointLightColor, POINT_LIGHT, V3_FORWARD};
 
     Vector3 spotLightPosition = { 0.0f, 3.5f, 0.0f };
     Vector3 spotLightTarget = { 0.0f, 0.0f, 0.0f };
@@ -360,6 +367,7 @@ int main(void)
         mvp = world * view * proj;
         
         normal = Transpose(Invert(world));  
+        //lights[0].Render(shaderProgram, 0);
 
 
         u_normal = glGetUniformLocation(shaderProgram, "u_normal");
@@ -401,6 +409,8 @@ int main(void)
         glUniform3fv(u_spotLightDirection, 1, &spotLightDirection.x);
         glUniform3fv(u_spotLightColor, 1, &spotLightColor.x);
         glUniform1f(u_lightRadius, lightRadius);
+
+        
         
         glUniform1f(u_ambientFactor, ambientFactor);
         glUniform1f(u_diffuseFactor, diffuseFactor);
