@@ -159,35 +159,15 @@ int main(void)
     CreateMesh(&planeMesh, PLANE);
     CreateMesh(&sphereMesh, SPHERE);
 
-    Vector3 directionLightPosition = { 10.0f, 10.0f, 10.0f };
-    Vector3 directionLightColor = { 1.0f, 1.0f, 1.0f };
-    Vector3 directionLightDirection = CalcFacingVector3(Vector3{ 0 }, directionLightPosition);
-    int allowDirectionLight = false;
-
-    Vector3 pointLightPosition = { 3.0f, 3.0f, 2.0f };
-    Vector3 pointLightColor = { 1.0f, 1.0f, 1.0f };
-    int allowPointLight = true;
-
     lights.resize(20);
-
-    //lights[0] = Light{ pointLightPosition, {1.0f, 0.0f, 0.0f}, POINT_LIGHT, V3_FORWARD };
-    //lights.push_back(Light{pointLightPosition, {0.0f, 0.0f, 1.0f}, POINT_LIGHT, V3_FORWARD});
-
-    Vector3 spotLightPosition = { 0.0f, 3.5f, 0.0f };
-    Vector3 spotLightTarget = { 0.0f, 0.0f, 0.0f };
-    Vector3 spotLightColor = { 1.0f, 1.0f, 1.0f };
-    Vector3 spotLightDirection = CalcFacingVector3(spotLightTarget, spotLightPosition);
-    float spotLightFOV = 18;
-    float spotLightFOVBlend = 6;
-    int allowSpotLight = false;
-    lights[0] = Light{spotLightPosition, {1.0f, 1.0f, 1.0f}, DIRECTION_LIGHT, directionLightDirection};
-    lights[0].intensity = 0.4f;
-    lights[0].specularScale = 2.0f;
-
-    lights[1] = Light{ pointLightPosition, {1.0f, 0.0f, 0.0f}, POINT_LIGHT};
-
-    lights[2] = Light{spotLightPosition, {0.0f, 1.0f, 0.0f}, POINT_LIGHT};
-    lights[3] = Light{ spotLightPosition, {0.0f, 1.0f, 1.0f}, SPOT_LIGHT, {0.0f, -1.0f, 0.0f}, 20, 10 };
+    //  lights[0] = Light{ {10.0, 10.0f, 10.0f}, {1.0f, 1.0f, 1.0f}, DIRECTION_LIGHT, CalcFacingVector3({0, 0, 0}, {10.0f, 10.0f, 10.0f})};
+    //  lights[0].intensity = 0.4f;
+    //  lights[0].specularScale = 2.0f;
+    //  
+    //  lights[1] = Light{ {-2.0f, -2.0f, -1.0f}, {1.0f, 0.0f, 0.0f}, POINT_LIGHT};
+    //  
+    //  lights[2] = Light{{3.0f, 3.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, POINT_LIGHT};
+    lights[1] = Light{ {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, SPOT_LIGHT, {0.0f, 1.0f, -1.0f}, 20, 5};
 
     float lightRadius = 2.5f;
     float lightAngle = 90.0f * DEG2RAD;
@@ -342,35 +322,15 @@ int main(void)
         GLuint shaderProgram = GL_NONE;
 
         GLint u_cameraPosition = -2;
-        GLint u_directionLightColor = -2;
-        GLint u_lightDirection = -2;
-        GLint u_pointLightPosition = -2;
-        GLint u_pointLightColor = -2;
-        GLint u_spotLightPosition = -2;
-        GLint u_spotLightDirection = -2;
-        GLint u_spotLightColor = -2;
-        GLint u_lightRadius = -2;
         
         GLint u_ambientFactor = -2;
         GLint u_diffuseFactor = -2;
-        GLint u_specularPower = -2;
-        GLint u_intensity = -2;
-
-        GLint u_allowDirectionLight = -2;
-        GLint u_allowPointLight = -2;
-        GLint u_allowSpotLight = -2;
-        GLint u_fov = -2;
-        GLint u_fovBlend = -2;
-
         GLint u_normalToggle = -2;
 
         // ------------------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------------------
 
-        pointLightPosition = Multiply(pointLightPosition, RotateZ(sin(dt * 15)));
-
-        lights[0].position = pointLightPosition;
 
         world = Translate(-0.5, -0.5, 0) * RotateX(DEG2RAD * planeRotationX) *  RotateY(DEG2RAD * planeRotationY) *  RotateZ(DEG2RAD * planeRotationY) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
 
@@ -385,62 +345,21 @@ int main(void)
         u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
         
         u_cameraPosition = glGetUniformLocation(shaderProgram, "u_cameraPosition");
-        u_directionLightColor = glGetUniformLocation(shaderProgram, "u_directionLightColor");
-        u_lightDirection = glGetUniformLocation(shaderProgram, "u_lightDirection");
-        u_pointLightPosition = glGetUniformLocation(shaderProgram, "u_pointLightPosition");
-        u_pointLightColor = glGetUniformLocation(shaderProgram, "u_pointLightColor");
-        u_spotLightPosition = glGetUniformLocation(shaderProgram, "u_spotLightPosition");
-        u_spotLightColor = glGetUniformLocation(shaderProgram, "u_spotLightColor");
-        u_spotLightDirection = glGetUniformLocation(shaderProgram, "u_spotLightDirection");
-        u_lightRadius = glGetUniformLocation(shaderProgram, "u_lightRadius");
         
         u_ambientFactor = glGetUniformLocation(shaderProgram, "u_ambientFactor");
         u_diffuseFactor = glGetUniformLocation(shaderProgram, "u_diffuseFactor");
-        u_specularPower = glGetUniformLocation(shaderProgram, "u_specularPower");
-        u_intensity = glGetUniformLocation(shaderProgram, "u_intensity");
         u_normalToggle = glGetUniformLocation(shaderProgram, "u_normalToggle");
-        
-        u_allowDirectionLight = glGetUniformLocation(shaderProgram, "u_allowDirectionLight");
-        u_allowPointLight = glGetUniformLocation(shaderProgram, "u_allowPointLight");
-        u_allowSpotLight = glGetUniformLocation(shaderProgram, "u_allowSpotLight");
-        u_fov = glGetUniformLocation(shaderProgram, "u_fov");
-        u_fovBlend = glGetUniformLocation(shaderProgram, "u_fovBlend");
         
         glUniformMatrix3fv(u_normal, 1, GL_FALSE, ToFloat9(normal).v);
         glUniformMatrix4fv(u_world, 1, GL_FALSE, ToFloat16(world).v);
         glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
         
-        directionLightDirection = CalcFacingVector3(Vector3{ 0 }, directionLightPosition);
-        lights[0].direction = directionLightDirection;
 
-        glUniform3fv(u_cameraPosition, 1, &camPos.x);
-        glUniform3fv(u_lightDirection, 1, &directionLightDirection.x);
-        glUniform3fv(u_directionLightColor, 1, &directionLightColor.x);
-        glUniform3fv(u_pointLightPosition, 1, &pointLightPosition.x);
-        glUniform3fv(u_pointLightColor, 1, &pointLightColor.x);
-        glUniform3fv(u_spotLightPosition, 1, &spotLightPosition.x);
-        glUniform3fv(u_spotLightDirection, 1, &spotLightDirection.x);
-        glUniform3fv(u_spotLightColor, 1, &spotLightColor.x);
-        glUniform1f(u_lightRadius, lightRadius);
-        
+        glUniform3fv(u_cameraPosition, 1, &camPos.x);     
         
         glUniform1f(u_ambientFactor, ambientFactor);
         glUniform1f(u_diffuseFactor, diffuseFactor);
-        glUniform1f(u_specularPower, specularPower);
-        glUniform1f(u_intensity, intensity);
         glUniform1i(u_normalToggle, normalToggle);
-
-        glUniform1i(u_allowDirectionLight, allowDirectionLight);
-        glUniform1i(u_allowPointLight, allowPointLight);
-        glUniform1i(u_allowSpotLight, allowSpotLight);
-
-        //  Vector3 displacement = Normalize(camPos - spotLightPosition); //(position.x - u_spotLightPosition.x, position.y - u_spotLightPosition.y, position.z - u_spotLightPosition.z);
-        //  testDOT = Dot(displacement, spotLightDirection);
-        //  testAngle = RAD2DEG * acos(testDOT);
-        //  std::cout << testAngle << std::endl;
-
-        glUniform1f(u_fov, spotLightFOV);
-        glUniform1f(u_fovBlend, spotLightFOVBlend);
 
         u_normalMap = glGetUniformLocation(shaderProgram, "u_normalMap");
         u_tex = glGetUniformLocation(shaderProgram, "u_tex");
@@ -464,6 +383,9 @@ int main(void)
 
         // Lights
 
+        lights[0].position = Multiply(lights[0].position, RotateZ(sin(dt * 15)));
+        lights[1].direction = CalcFacingVector3(Vector3{ 0 }, lights[1].position);
+
         for (int i = 0; i < lights.size(); i++)
         {
             lights[i].Render(shaderPhong, i);
@@ -473,48 +395,6 @@ int main(void)
 
             lights[i].DrawLight(shaderUniformColor, &mvp, sphereMesh, i);
         }
-
-        
-        shaderProgram = shaderUniformColor;
-        glUseProgram(shaderProgram);
-        world = Translate(directionLightPosition);
-        mvp = world * view * proj;
-        u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
-        u_color = glGetUniformLocation(shaderProgram, "u_color");
-        glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
-        glUniform3fv(u_color, 1, &directionLightColor.x);
-        DrawMesh(sphereMesh);
-       
-        //  
-        //  if (allowPointLight)
-        //  {
-        //      shaderProgram = shaderUniformColor;
-        //      glUseProgram(shaderProgram);
-        //      world = Scale(V3_ONE * lightRadius) * Translate(pointLightPosition);
-        //      mvp = world * view * proj;
-        //      u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
-        //      u_color = glGetUniformLocation(shaderProgram, "u_color");
-        //      glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
-        //      glUniform3fv(u_color, 1, &pointLightColor.x);
-        //      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        //      DrawMesh(sphereMesh);
-        //      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        //  }
-        //  
-        //  if (allowSpotLight)
-        //  {
-        //      shaderProgram = shaderUniformColor;
-        //      glUseProgram(shaderProgram);
-        //      world = Scale(V3_ONE / 2) * Translate(spotLightPosition);
-        //      mvp = world * view * proj;
-        //      u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
-        //      u_color = glGetUniformLocation(shaderProgram, "u_color");
-        //      glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
-        //      glUniform3fv(u_color, 1, &spotLightColor.x);
-        //      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        //      DrawMesh(sphereMesh);
-        //      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        //  }
 
         // ------------------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------------------
@@ -528,23 +408,16 @@ int main(void)
         else
         {
             ImGui::SliderFloat3("Camera Position", &camPos.x, -10.0f, 10.0f);
-            ImGui::SliderFloat3("Directional Light Position", &directionLightPosition.x, -10.0f, 10.0f);
-            ImGui::SliderFloat3("Directional Light Color", &directionLightColor.x, 0.0f, 1.0f);
+
+            ImGui::SliderFloat3("Light Position", &lights[0].position.x, -10.0f, 10.0f);
+            ImGui::SliderFloat3("Light Direction", &lights[0].direction.x, -10.0f, 10.0f);
+            ImGui::SliderFloat3("Light Color", &lights[0].color.x, 0.0f, 1.0f);
+            ImGui::SliderFloat("Light Radius", &lights[0].radius, 0.0f, 15.0f);
+            ImGui::SliderFloat("Light FOV", &lights[0].FOV, 0.0f, 180.0f);
+            ImGui::SliderFloat("Light FOV Blend", &lights[0].FOVbloom, 0.0f, 180.0f - lights[0].FOV);      
+            ImGui::SliderInt("Light Type", &lights[0].type, 0, 2);
             ImGui::NewLine();
-            ImGui::SliderFloat3("Point Light Position", &pointLightPosition.x, -10.0f, 10.0f);
-            ImGui::SliderFloat3("Point Light Color", &pointLightColor.x, 0.0f, 1.0f);
-            ImGui::NewLine();
-            ImGui::SliderFloat3("Spot Light Position", &spotLightPosition.x, -10.0f, 10.0f);
-            ImGui::SliderFloat3("Spot Light Color", &spotLightColor.x, 0.0f, 1.0f);
-            ImGui::SliderFloat("Spot Light FOV", &spotLightFOV, 0.0f, 180.0f);
-            ImGui::SliderFloat("Spot Light FOV Blend", &spotLightFOVBlend, 0.0f, 180.0f - spotLightFOV);
-            ImGui::NewLine();
-            ImGui::SliderFloat("Light Radius", &lightRadius, 0.25f, 5.0f);
-            ImGui::SliderAngle("Light Angle", &lightAngle);
-            ImGui::Checkbox("Direction Light", (bool*)&allowDirectionLight); ImGui::SameLine();
-            ImGui::Checkbox("Point Light", (bool*)&allowPointLight); ImGui::SameLine();
-            ImGui::Checkbox("Spot Light", (bool*) & allowSpotLight);
-            ImGui::NewLine();
+
 
             ImGui::SliderFloat("Plane Rotation X", &planeRotationX, 0.0f, 360.0f);
             ImGui::SliderFloat("Plane Rotation Y", &planeRotationY, 0.0f, 360.0f);

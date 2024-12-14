@@ -8,25 +8,9 @@ in mat3 TBN;
 out vec4 FragColor;
 
 uniform vec3 u_cameraPosition;
-uniform vec3 u_pointLightPosition;
-uniform vec3 u_spotLightPosition;
-uniform vec3 u_lightDirection;
-uniform vec3 u_spotLightDirection;
-uniform vec3 u_directionLightColor;
-uniform vec3 u_pointLightColor;
-uniform vec3 u_spotLightColor;
-uniform float u_lightRadius;
-uniform float u_intensity;
 
 uniform float u_ambientFactor;
 uniform float u_diffuseFactor;
-uniform float u_specularPower;
-
-uniform float u_fov;
-uniform float u_fovBlend;
-uniform int u_allowDirectionLight;
-uniform int u_allowPointLight;
-uniform int u_allowSpotLight;
 uniform int u_normalToggle;
 
 uniform sampler2D u_tex;
@@ -88,18 +72,17 @@ vec3 direction_light(vec3 direction, vec3 normal, vec3 camera, vec3 color, float
 }
 
 // Phong but attenuated & within field of view (fov)
-vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower, float radius, float fov, float fovBlend)
+vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower, float radius, float fov, float fovBloom)
 {
-    // TODO -- figure this out for yourself
     vec3 lighting = phong(position, normal, camera, light, color, ambientFactor, diffuseFactor, specularPower);
-    // dot(a,b) = |a||b|cos0 <--- if thhis is bigger then FOV, = 0   /// if a and b are normalized, eq turns into dot(a,b) =cos0, acos(dot(a,b)) = 0 
     
+    // dot(a,b) = |a||b|cos0 <--- if thhis is bigger then FOV, = 0   /// if a and b are normalized, eq turns into dot(a,b) =cos0, acos(dot(a,b)) = 0 
     vec3 displacement = normalize(position - light);
     
-    float angle = degrees(acos(dot(displacement, direction)));    
+    float angle = degrees(acos(dot(displacement, normalize(direction))));    
 
-    // value of 1-0 with 1 being at edge of FOV, and 0 being at edge of FOV+Blend
-    lighting *= clamp(1 - ((angle - fov) /fovBlend), 0, 1);
+    // value of 1-0 with 1 being at edge of FOV, and 0 being at edge of FOV+Bloom
+    lighting *= clamp(1 - ((angle - fov) /fovBloom), 0, 1);
     
     return lighting;
 }
@@ -111,16 +94,6 @@ void main()
     normalMap = normalize(normalMap * 2.0 - 1.0);
     normalMap = normalize(TBN * normalMap);
     vec3 lighting;
-
-    //  // The best booleans
-    //  if(u_allowDirectionLight > 0)
-    //      lighting += direction_light(u_lightDirection, normal, u_cameraPosition,u_directionLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
-    //  
-    //  if(u_allowPointLight > 0)
-    //      lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap) , u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
-    //  
-    //  if(u_allowSpotLight > 0)
-    //      lighting += spot_light(position, u_spotLightDirection, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);
 
     for( int i = 0; i < 20; i++)
     {
@@ -134,7 +107,7 @@ void main()
         lighting *= u_lights[i].intensity;
     }
     
-    gl_FragColor = vec4(lighting * model * u_intensity, 1.0) ;
+    gl_FragColor = vec4(lighting * model, 1.0) ;
 }
 
 // Extra practice: Add more information to light such as ambient-diffuse-specular + intensity
