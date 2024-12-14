@@ -100,13 +100,7 @@
     <None Include="assets\shaders\phong.frag">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="assets\shaders\points.vert">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="assets\shaders\uniform_color.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="assets\shaders\texture_color.frag">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="assets\shaders\default.vert">

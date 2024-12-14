@@ -141,8 +141,8 @@ int main(void)
     float right = 1.0f;
     float top = 1.0f;
     float bottom = -1.0f;
-    float near = 0.001f; // 1.0 for testing purposes. Usually 0.1f or 0.01f
-    float far = 15.0f;
+    float near = 0.001f;
+    float far = 50.0f;
     float camPitch = 0;
     float camYaw = 0;
     float panScale = 0.25f;
@@ -170,7 +170,8 @@ int main(void)
 
     lights.resize(20);
 
-    lights[0] = Light{pointLightPosition, pointLightColor, POINT_LIGHT, V3_FORWARD};
+    //lights[0] = Light{ pointLightPosition, {1.0f, 0.0f, 0.0f}, POINT_LIGHT, V3_FORWARD };
+    //lights.push_back(Light{pointLightPosition, {0.0f, 0.0f, 1.0f}, POINT_LIGHT, V3_FORWARD});
 
     Vector3 spotLightPosition = { 0.0f, 3.5f, 0.0f };
     Vector3 spotLightTarget = { 0.0f, 0.0f, 0.0f };
@@ -179,6 +180,14 @@ int main(void)
     float spotLightFOV = 18;
     float spotLightFOVBlend = 6;
     int allowSpotLight = false;
+    lights[0] = Light{spotLightPosition, {1.0f, 1.0f, 1.0f}, DIRECTION_LIGHT, directionLightDirection};
+    lights[0].intensity = 0.4f;
+    lights[0].specularScale = 2.0f;
+
+    lights[1] = Light{ pointLightPosition, {1.0f, 0.0f, 0.0f}, POINT_LIGHT};
+
+    lights[2] = Light{spotLightPosition, {0.0f, 1.0f, 0.0f}, POINT_LIGHT};
+    lights[3] = Light{ spotLightPosition, {0.0f, 1.0f, 1.0f}, SPOT_LIGHT, {0.0f, -1.0f, 0.0f}, 20, 10 };
 
     float lightRadius = 2.5f;
     float lightAngle = 90.0f * DEG2RAD;
@@ -251,7 +260,7 @@ int main(void)
             camToggle = !camToggle;
         
         if (IsKeyPressed(GLFW_KEY_N))
-            normalToggle = !normalToggle;
+            normalToggle = !normalToggle; // I know what I'm doing intellisense, go away >:(
 
         if (!camToggle)
         {
@@ -360,15 +369,16 @@ int main(void)
         // ------------------------------------------------------------------------------------------
 
         pointLightPosition = Multiply(pointLightPosition, RotateZ(sin(dt * 15)));
+
+        lights[0].position = pointLightPosition;
+
         world = Translate(-0.5, -0.5, 0) * RotateX(DEG2RAD * planeRotationX) *  RotateY(DEG2RAD * planeRotationY) *  RotateZ(DEG2RAD * planeRotationY) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
 
         shaderProgram = shaderPhong;
         glUseProgram(shaderProgram);
         mvp = world * view * proj;
         
-        normal = Transpose(Invert(world));  
-        //lights[0].Render(shaderProgram, 0);
-
+        normal = Transpose(Invert(world));
 
         u_normal = glGetUniformLocation(shaderProgram, "u_normal");
         u_world = glGetUniformLocation(shaderProgram, "u_world");
@@ -400,6 +410,9 @@ int main(void)
         glUniformMatrix4fv(u_world, 1, GL_FALSE, ToFloat16(world).v);
         glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
         
+        directionLightDirection = CalcFacingVector3(Vector3{ 0 }, directionLightPosition);
+        lights[0].direction = directionLightDirection;
+
         glUniform3fv(u_cameraPosition, 1, &camPos.x);
         glUniform3fv(u_lightDirection, 1, &directionLightDirection.x);
         glUniform3fv(u_directionLightColor, 1, &directionLightColor.x);
@@ -409,7 +422,6 @@ int main(void)
         glUniform3fv(u_spotLightDirection, 1, &spotLightDirection.x);
         glUniform3fv(u_spotLightColor, 1, &spotLightColor.x);
         glUniform1f(u_lightRadius, lightRadius);
-
         
         
         glUniform1f(u_ambientFactor, ambientFactor);
@@ -450,60 +462,59 @@ int main(void)
 
         DrawMesh(planeMesh);
 
-        //  glUniform1i(u_tex, 0);
-        //  glActiveTexture(GL_TEXTURE0);
-        //  glBindTexture(GL_TEXTURE_2D, texPotBase);
+        // Lights
 
-        //  DrawMesh(potMesh);
+        for (int i = 0; i < lights.size(); i++)
+        {
+            lights[i].Render(shaderPhong, i);
+            
+            world = Scale(V3_ONE * lights[i].radius) * Translate(lights[i].position);
+            mvp = world * view * proj;
+
+            lights[i].DrawLight(shaderUniformColor, &mvp, sphereMesh, i);
+        }
+
         
-        //shaderProgram = shaderPhong;
-        //glUseProgram(shaderProgram);
-
-
-        if (allowDirectionLight)
-        {
-            shaderProgram = shaderUniformColor;
-            glUseProgram(shaderProgram);
-            world = Translate(directionLightPosition);
-            mvp = world * view * proj;
-            //u_world = glGetUniformLocation(shaderProgram, "u_world");
-            u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
-            u_color = glGetUniformLocation(shaderProgram, "u_color");
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
-            glUniform3fv(u_color, 1, &directionLightColor.x);
-            DrawMesh(sphereMesh);
-        }
-
-        if (allowPointLight)
-        {
-            shaderProgram = shaderUniformColor;
-            glUseProgram(shaderProgram);
-            world = Scale(V3_ONE * lightRadius) * Translate(pointLightPosition);
-            mvp = world * view * proj;
-            u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
-            u_color = glGetUniformLocation(shaderProgram, "u_color");
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
-            glUniform3fv(u_color, 1, &pointLightColor.x);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            DrawMesh(sphereMesh);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }
-
-        if (allowSpotLight)
-        {
-            shaderProgram = shaderUniformColor;
-            glUseProgram(shaderProgram);
-            world = Scale(V3_ONE / 2) * Translate(spotLightPosition);
-            mvp = world * view * proj;
-            u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
-            u_color = glGetUniformLocation(shaderProgram, "u_color");
-            glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
-            glUniform3fv(u_color, 1, &spotLightColor.x);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            DrawMesh(sphereMesh);
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        }         
-
+        shaderProgram = shaderUniformColor;
+        glUseProgram(shaderProgram);
+        world = Translate(directionLightPosition);
+        mvp = world * view * proj;
+        u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
+        u_color = glGetUniformLocation(shaderProgram, "u_color");
+        glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
+        glUniform3fv(u_color, 1, &directionLightColor.x);
+        DrawMesh(sphereMesh);
+       
+        //  
+        //  if (allowPointLight)
+        //  {
+        //      shaderProgram = shaderUniformColor;
+        //      glUseProgram(shaderProgram);
+        //      world = Scale(V3_ONE * lightRadius) * Translate(pointLightPosition);
+        //      mvp = world * view * proj;
+        //      u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
+        //      u_color = glGetUniformLocation(shaderProgram, "u_color");
+        //      glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
+        //      glUniform3fv(u_color, 1, &pointLightColor.x);
+        //      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //      DrawMesh(sphereMesh);
+        //      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //  }
+        //  
+        //  if (allowSpotLight)
+        //  {
+        //      shaderProgram = shaderUniformColor;
+        //      glUseProgram(shaderProgram);
+        //      world = Scale(V3_ONE / 2) * Translate(spotLightPosition);
+        //      mvp = world * view * proj;
+        //      u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
+        //      u_color = glGetUniformLocation(shaderProgram, "u_color");
+        //      glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
+        //      glUniform3fv(u_color, 1, &spotLightColor.x);
+        //      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        //      DrawMesh(sphereMesh);
+        //      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        //  }
 
         // ------------------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------------------

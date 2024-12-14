@@ -110,8 +110,6 @@
   <ItemGroup>
     <None Include="assets\shaders\default.vert" />
     <None Include="assets\shaders\phong.frag" />
-    <None Include="assets\shaders\points.vert" />
-    <None Include="assets\shaders\texture_color.frag" />
     <None Include="assets\shaders\uniform_color.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

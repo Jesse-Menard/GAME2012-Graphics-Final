@@ -12,6 +12,7 @@ enum ShapeType
 
 struct Mesh
 {
+
 	// Number of triangle points in our mesh
 	// ie if we have 1 triangle, then count is 3 because 1 triangle is 3 points
 	int count = 0;

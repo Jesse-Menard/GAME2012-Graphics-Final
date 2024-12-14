@@ -33,19 +33,20 @@ uniform sampler2D u_tex;
 uniform sampler2D u_spec;
 uniform sampler2D u_normalMap;
 
-//  struct Light {
-//      vec3 position,
-//      vec3 direction,
-//      vec3 color,
-//      int type, // 0 = DIR, 1 = POINT, 2 = SPOT
-//      
-//      float specularScale;
-//  	float attenuationScale;
-//  	float intensity;
-//  	float FOV;
-//  	float FOVbloom;
-//  }
-//  uniform Light u_light;
+struct Light {
+    vec3 position;
+    vec3 direction;
+    vec3 color;
+    int type; // 0 = DIR, 1 = POINT, 2 = SPOT
+    
+    float radius;
+    float specularScale;
+	float attenuationScale;
+	float intensity;
+	float FOV;
+	float FOVbloom;
+};
+uniform Light u_lights[20];
 
 vec3 phong(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower)
 {
@@ -70,7 +71,7 @@ vec3 phong(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, floa
 // Phong but attenuated
 vec3 point_light(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower, float radius)
 {
-    vec3 lighting = phong(position, normal, u_cameraPosition, u_pointLightPosition, color, u_ambientFactor, u_diffuseFactor, u_specularPower);
+    vec3 lighting = phong(position, normal, camera, light, color, ambientFactor, diffuseFactor, specularPower);
 
     float dist = length(light - position);
     float attenuation = clamp(radius / dist, 0.0, 1.0);
@@ -82,7 +83,7 @@ vec3 point_light(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color
 // Phong but based on direction only
 vec3 direction_light(vec3 direction, vec3 normal, vec3 camera, vec3 color, float ambientFactor, float diffuseFactor, float specularPower)
 {
-    vec3 lighting = phong(vec3(0.0), normal, u_cameraPosition, -direction, color, u_ambientFactor, u_diffuseFactor, u_specularPower);
+    vec3 lighting = phong(vec3(0.0), normal, camera, -direction, color, ambientFactor, diffuseFactor, specularPower);
     return lighting;
 }
 
@@ -90,10 +91,10 @@ vec3 direction_light(vec3 direction, vec3 normal, vec3 camera, vec3 color, float
 vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower, float radius, float fov, float fovBlend)
 {
     // TODO -- figure this out for yourself
-    vec3 lighting = phong(position, normal, u_cameraPosition, u_spotLightPosition, color, u_ambientFactor, u_diffuseFactor, u_specularPower);
+    vec3 lighting = phong(position, normal, camera, light, color, ambientFactor, diffuseFactor, specularPower);
     // dot(a,b) = |a||b|cos0 <--- if thhis is bigger then FOV, = 0   /// if a and b are normalized, eq turns into dot(a,b) =cos0, acos(dot(a,b)) = 0 
     
-    vec3 displacement = normalize(position - u_spotLightPosition);
+    vec3 displacement = normalize(position - light);
     
     float angle = degrees(acos(dot(displacement, direction)));    
 
@@ -111,16 +112,27 @@ void main()
     normalMap = normalize(TBN * normalMap);
     vec3 lighting;
 
-    // The best booleans
-    if(u_allowDirectionLight > 0)
-        lighting += direction_light(u_lightDirection, normal, u_cameraPosition, u_directionLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
-    
-    if(u_allowPointLight > 0)
-        lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap) , u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
+    //  // The best booleans
+    //  if(u_allowDirectionLight > 0)
+    //      lighting += direction_light(u_lightDirection, normal, u_cameraPosition,u_directionLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
+    //  
+    //  if(u_allowPointLight > 0)
+    //      lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap) , u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
+    //  
+    //  if(u_allowSpotLight > 0)
+    //      lighting += spot_light(position, u_spotLightDirection, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);
 
-    if(u_allowSpotLight > 0)
-        lighting += spot_light(position, u_spotLightDirection, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);
+    for( int i = 0; i < 20; i++)
+    {
+        if(u_lights[i].type == 0)
+            lighting += direction_light(u_lights[i].direction, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale);
+        if(u_lights[i].type == 1)
+            lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap) , u_cameraPosition, u_lights[i].position, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale, u_lights[i].radius);
+        if(u_lights[i].type == 2)
+            lighting += spot_light(position, u_lights[i].direction, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_lights[i].position, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale, u_lights[i].radius, u_lights[i].FOV, u_lights[i].FOVbloom);
 
+        lighting *= u_lights[i].intensity;
+    }
     
     gl_FragColor = vec4(lighting * model * u_intensity, 1.0) ;
 }
