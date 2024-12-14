@@ -20,14 +20,16 @@ void main()
    position = (u_world * vec4(aPosition, 1.0)).xyz;
    normal = u_normal * aNormal;
    tcoord = aTcoord;
+
+   /// Math from https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+
    vec3 tangent = (u_world * vec4(aTangent, 1.0)).xyz;
    vec3 bitangent = (u_world * vec4(aBitangent, 1.0)).xyz;
 
    vec3 T = normalize(vec3(u_world * vec4(tangent, 0.0)));
    vec3 B = normalize(vec3(u_world * vec4(bitangent, 0.0)));
    vec3 N = normalize(vec3(u_world * vec4(normal,    0.0)));
-   TBN = inverse(mat3(T, B, N));
-   TBN = mat3(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+   TBN = mat3(T, B, N);
 
    gl_Position = u_mvp * vec4(aPosition, 1.0);
 }

@@ -12,17 +12,16 @@ uniform vec3 u_pointLightPosition;
 uniform vec3 u_spotLightPosition;
 uniform vec3 u_lightDirection;
 uniform vec3 u_spotLightDirection;
-uniform vec3 u_lightColor;
 uniform vec3 u_directionLightColor;
 uniform vec3 u_pointLightColor;
 uniform vec3 u_spotLightColor;
 uniform float u_lightRadius;
+uniform float u_intensity;
 
 uniform float u_ambientFactor;
 uniform float u_diffuseFactor;
 uniform float u_specularPower;
 
-uniform float u_attenuationScale;
 uniform float u_fov;
 uniform float u_fovBlend;
 uniform int u_allowDirectionLight;
@@ -89,8 +88,8 @@ vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 li
     else if (fov > testAngle)
         lighting *= 1;
     else
-        lighting *= fovBlend / (testAngle - fov + fovBlend);
-
+        lighting *= 1 - ((testAngle - fov) /fovBlend);
+        // value of 1-0 with 1 being at edge of FOV, and 0 being at edge of FOV+Blend
     return lighting;
 }
 
@@ -99,11 +98,9 @@ void main()
     vec3 model = texture(u_tex, tcoord).rgb;
     vec3 normalMap = texture(u_normalMap, tcoord).rgb;
     normalMap = normalize(normalMap * 2.0 - 1.0);
+    normalMap = normalize(TBN * normalMap);
     vec3 lighting;
 
-    if(u_allowSpotLight > 0)
-        normalMap = normalize(TBN * normalMap);
-   // normalMap = normalize(mat3(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f) * normalMap);
 
     // The best booleans
     if(u_allowDirectionLight > 0)
@@ -112,13 +109,11 @@ void main()
     if(u_allowPointLight > 0)
         lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap) , u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
 
-    //  if(u_allowSpotLight > 0)
-    //      lighting += spot_light(position, u_spotLightDirection, normal, u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);
+    if(u_allowSpotLight > 0)
+        lighting += spot_light(position, u_spotLightDirection, normal, u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);
 
-
-    float intensity = 3.0f;
     
-    gl_FragColor = vec4(lighting * model * intensity, 1.0) ;
+    gl_FragColor = vec4(lighting * model * u_intensity, 1.0) ;
 }
 
 // Extra practice: Add more information to light such as ambient-diffuse-specular + intensity

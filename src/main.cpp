@@ -37,19 +37,6 @@ void Print(Matrix m);
 
 Vector3 CalcFacingVector3(const Vector3 target, const Vector3 source);
 
-enum Projection : int
-{
-    ORTHO,  // Orthographic, 2D
-    PERSP   // Perspective,  3D
-};
-
-struct Pixel
-{
-    stbi_uc r = 255;
-    stbi_uc g = 255;
-    stbi_uc b = 255;
-    stbi_uc a = 255;
-};
 
 int main(void)
 {
@@ -82,62 +69,18 @@ int main(void)
 
     // Vertex shaders:
     GLuint vs = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/default.vert");
-    GLuint vsSkybox = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/skybox.vert");
-    GLuint vsPoints = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/points.vert");
-    GLuint vsLines = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/lines.vert");
-    GLuint vsVertexPositionColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/vertex_color.vert");
-    GLuint vsColorBufferColor = CreateShader(GL_VERTEX_SHADER, "./assets/shaders/buffer_color.vert");
     
     // Fragment shaders:
-    GLuint fsSkybox = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/skybox.frag");
-    GLuint fsLines = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/lines.frag");
     GLuint fsUniformColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/uniform_color.frag");
-    GLuint fsVertexColor = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/vertex_color.frag");
-    GLuint fsTcoords = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/tcoord_color.frag");
-    GLuint fsNormals = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/normal_color.frag");
-    GLuint fsTexture = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color.frag");
-    GLuint fsTextureMix = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/texture_color_mix.frag");
     GLuint fsPhong = CreateShader(GL_FRAGMENT_SHADER, "./assets/shaders/phong.frag");
     
     // Shader programs:
     GLuint shaderUniformColor = CreateProgram(vs, fsUniformColor);
-    GLuint shaderVertexPositionColor = CreateProgram(vsVertexPositionColor, fsVertexColor);
-    GLuint shaderVertexBufferColor = CreateProgram(vsColorBufferColor, fsVertexColor);
-    GLuint shaderPoints = CreateProgram(vsPoints, fsVertexColor);
-    GLuint shaderLines = CreateProgram(vsLines, fsLines);
-    GLuint shaderTcoords = CreateProgram(vs, fsTcoords);
-    GLuint shaderNormals = CreateProgram(vs, fsNormals);
-    GLuint shaderTexture = CreateProgram(vs, fsTexture);
-    GLuint shaderTextureMix = CreateProgram(vs, fsTextureMix);
-    GLuint shaderSkybox = CreateProgram(vsSkybox, fsSkybox);
     GLuint shaderPhong = CreateProgram(vs, fsPhong);
-
-    // See Diffuse 2.png for context
-    //Vector2 N = Rotate(Vector2{ 0.0f, 1.0f }, 30.0f * DEG2RAD);
-    //Vector2 L = Normalize(Vector2{ 6.0f, 5.0f });
-    //float t = Dot(N, L);
 
     // Our obj file defines tcoords as 0 = bottom, 1 = top, but OpenGL defines as 0 = top 1 = bottom.
     // Flipping our image vertically is the best way to solve this as it ensures a "one-stop" solution (rather than an in-shader solution).
     stbi_set_flip_vertically_on_load(true);
-
-    // Step 1: Load image from disk to CPU
-    int texPotWidth = 0;
-    int texPotHeight = 0;
-    int texPotBaseChannels = 0;
-    stbi_uc* pixelsPotBase = stbi_load("./assets/textures/POT_base.png", &texPotWidth, &texPotHeight, &texPotBaseChannels, 0);
-    
-    // Step 2: Upload image from CPU to GPU
-    GLuint texPotBase = GL_NONE;
-    glGenTextures(1, &texPotBase);
-    glBindTexture(GL_TEXTURE_2D, texPotBase);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texPotWidth, texPotHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixelsPotBase);
-    stbi_image_free(pixelsPotBase);
-    //pixelsPotBase = nullptr;
 
     // Wall textures from https://polyhaven.com/a/brick_wall_001
     int texWallWidth = 0;
@@ -155,7 +98,6 @@ int main(void)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWallWidth, texWallHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelsWallBase);
     stbi_image_free(pixelsWallBase);
     pixelsWallBase = nullptr;
-
 
     int texWallNormalWidth = 0;
     int texWallNormalHeight = 0;
@@ -190,10 +132,6 @@ int main(void)
     stbi_image_free(pixelsWallSpec);
     pixelsWallSpec = nullptr;
 
-    int object = 0;
-    printf("Object %i\n", object + 1);
-
-    Projection projection = PERSP;
     Vector3 camPos{ 0.0f, 2.0f, 3.0f };
     float fov = 75.0f * DEG2RAD;
     float left = -1.0f;
@@ -212,17 +150,9 @@ int main(void)
     bool imguiDemo = false;
     bool camToggle = true;
 
-    Mesh potMesh, cubeMesh, sphereMesh, planeMesh;
-    //CreateMesh(&potMesh, "assets/meshes/potemkin.obj");
-    //CreateMesh(&cubeMesh, CUBE);
+    Mesh sphereMesh, planeMesh;
     CreateMesh(&planeMesh, PLANE);
     CreateMesh(&sphereMesh, SPHERE);
-    
-
-    //planeMesh.TBN.x
-
-    //mat3 TBN = mat3(T, B, N);
-
 
     Vector3 directionLightPosition = { 10.0f, 10.0f, 10.0f };
     Vector3 directionLightColor = { 1.0f, 1.0f, 1.0f };
@@ -240,7 +170,6 @@ int main(void)
     float spotLightFOV = 18;
     float spotLightFOVBlend = 6;
     int allowSpotLight = false;
-    int normalToggle = false;
 
     float lightRadius = 2.5f;
     float lightAngle = 90.0f * DEG2RAD;
@@ -248,9 +177,10 @@ int main(void)
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
     float specularPower = 64.0f;
-    float attenuationScale = 0.0f;
+    float intensity = 3.0f;
 
-    // Render looks weird cause this isn't enabled, but its causing unexpected problems which I'll fix soon!
+    int normalToggle = false;
+
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
@@ -305,13 +235,6 @@ int main(void)
         }
         Vector2 mouseDelta = { mx - pmx, my - pmy };
 
-        // Change object when space is pressed
-        if (IsKeyPressed(GLFW_KEY_TAB))
-        {
-            ++object %= 5;
-            printf("Object %i\n", object + 1);
-        }
-
         if (IsKeyPressed(GLFW_KEY_I))
             imguiDemo = !imguiDemo;
         
@@ -349,7 +272,7 @@ int main(void)
         float camTranslateValue = 0.01;
         if (IsKeyDown(GLFW_KEY_LEFT_SHIFT))
         {
-            camTranslateValue = 0.002;
+            camTranslateValue = 0.02;
         }
 
         if (IsKeyDown(GLFW_KEY_W))
@@ -386,13 +309,10 @@ int main(void)
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        Matrix rotationX = RotateX(100.0f * time * DEG2RAD);
-        Matrix rotationY = RotateY(100.0f * time * DEG2RAD);
-
         Matrix normal = MatrixIdentity();
         Matrix world = MatrixIdentity();
         Matrix view = LookAt(camPos, camPos - frontView, V3_UP);
-        Matrix proj = projection == ORTHO ? Ortho(left, right, bottom, top, near, far) : Perspective(fov, SCREEN_ASPECT, near, far);
+        Matrix proj = Perspective(fov, SCREEN_ASPECT, near, far);
         Matrix mvp = MatrixIdentity();
 
         GLuint u_color = -2;
@@ -401,16 +321,11 @@ int main(void)
         GLint u_mvp = -2;
         GLint u_tex = -2;
         GLint u_normalMap = -2;
-        GLint u_textureSlots[2]{ -2, -2 };
         GLuint shaderProgram = GL_NONE;
-        GLuint texture = texPotBase;
-        GLint u_t = GL_NONE;
 
         GLint u_cameraPosition = -2;
-        GLint u_lightPosition = -2;
         GLint u_directionLightColor = -2;
         GLint u_lightDirection = -2;
-        GLint u_lightColor = -2;
         GLint u_pointLightPosition = -2;
         GLint u_pointLightColor = -2;
         GLint u_spotLightPosition = -2;
@@ -420,8 +335,8 @@ int main(void)
         
         GLint u_ambientFactor = -2;
         GLint u_diffuseFactor = -2;
-        GLint u_SpecularPower = -2;
-        GLint u_attenuationScale = -2;
+        GLint u_specularPower = -2;
+        GLint u_intensity = -2;
 
         GLint u_allowDirectionLight = -2;
         GLint u_allowPointLight = -2;
@@ -442,42 +357,7 @@ int main(void)
         glUseProgram(shaderProgram);
         mvp = world * view * proj;
         
-        normal = Transpose(Invert(world));
-        Vector3 why = { 1.0f, 1.0f, 1.0f };
-        for (int i = 0; i < planeMesh.tangents.size(); i++)
-        {
-            Vector3 T = Normalize((world * Vector4{ planeMesh.tangents[i].x, planeMesh.tangents[i].y, planeMesh.tangents[i].z, 0.0f }));
-            Vector3 B = Normalize((world * Vector4{ planeMesh.bitangents[i].x, planeMesh.bitangents[i].y, planeMesh.bitangents[i].z, 0.0f }));
-            Vector3 N = Normalize((world * Vector4{ planeMesh.normals[i].x, planeMesh.normals[i].y, planeMesh.normals[i].z, 0.0f}));
-
-            Matrix TBN = { T.x, T.y, T.z, 0.0f,
-                           B.x, B.y, B.z, 0.0f,
-                           N.x, N.y, N.z, 0.0f,
-                           0.0f, 0.0f, 0.0f, 0.0f            
-            };
-            int stop;
-            stop = 1;
-        }        
-
-        /// Math from https://learnopengl.com/Advanced-Lighting/Normal-Mapping
-
-        Vector3 edge1 = planeMesh.positions[1] - planeMesh.positions[0];
-        Vector3 edge2 = planeMesh.positions[2] - planeMesh.positions[0];
-        Vector2 deltaUV1 = planeMesh.tcoords[1] - planeMesh.tcoords[0];
-        Vector2 deltaUV2 = planeMesh.tcoords[2] - planeMesh.tcoords[0];
-
-        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
-        Vector3 tangent1;
-        tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-        tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-        tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-
-        Vector3 bitangent1;
-        bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-        bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-        bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-
+        normal = Transpose(Invert(world));  
 
 
         u_normal = glGetUniformLocation(shaderProgram, "u_normal");
@@ -496,8 +376,8 @@ int main(void)
         
         u_ambientFactor = glGetUniformLocation(shaderProgram, "u_ambientFactor");
         u_diffuseFactor = glGetUniformLocation(shaderProgram, "u_diffuseFactor");
-        u_SpecularPower = glGetUniformLocation(shaderProgram, "u_specularPower");
-        u_attenuationScale = glGetUniformLocation(shaderProgram, "u_attenuationScale");
+        u_specularPower = glGetUniformLocation(shaderProgram, "u_specularPower");
+        u_intensity = glGetUniformLocation(shaderProgram, "u_intensity");
         u_normalToggle = glGetUniformLocation(shaderProgram, "u_normalToggle");
         
         u_allowDirectionLight = glGetUniformLocation(shaderProgram, "u_allowDirectionLight");
@@ -522,8 +402,8 @@ int main(void)
         
         glUniform1f(u_ambientFactor, ambientFactor);
         glUniform1f(u_diffuseFactor, diffuseFactor);
-        glUniform1f(u_SpecularPower, specularPower);
-        glUniform1f(u_attenuationScale, attenuationScale);
+        glUniform1f(u_specularPower, specularPower);
+        glUniform1f(u_intensity, intensity);
         glUniform1i(u_normalToggle, normalToggle);
 
         glUniform1i(u_allowDirectionLight, allowDirectionLight);
@@ -648,26 +528,13 @@ int main(void)
 
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular", &specularPower, 8.0f, 256.0f);
-            ImGui::SliderFloat("Attenuation", &attenuationScale, 0.0f, 5.0f);
+            ImGui::SliderFloat("Specular", &specularPower, 0.0f, 256.0f);
+            ImGui::SliderFloat("Intensity", &intensity, 1.0f, 20.0f);
             ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle);
-
-            ImGui::RadioButton("Orthographic", (int*)&projection, 0); ImGui::SameLine();
-            ImGui::RadioButton("Perspective", (int*)&projection, 1);
 
             ImGui::SliderFloat("Near", &near, 0.0f, 10.0f);
             ImGui::SliderFloat("Far", &far,0.0f, 100.0f);
-            if (projection == ORTHO)
-            {
-                ImGui::SliderFloat("Left", &left, -1.0f, -10.0f);
-                ImGui::SliderFloat("Right", &right, 1.0f, 10.0f);
-                ImGui::SliderFloat("Top", &top, 1.0f, 10.0f);
-                ImGui::SliderFloat("Bottom", &bottom, -1.0f, -10.0f);
-            }
-            else if (projection == PERSP)
-            {
-                ImGui::SliderAngle("FoV", &fov, 10.0f, 90.0f);
-            }
+            ImGui::SliderAngle("FoV", &fov, 10.0f, 90.0f);
         }
         
         ImGui::Render();
