@@ -10,12 +10,16 @@ void Upload(Mesh* mesh);
 
 void GenCube(Mesh* mesh, float width, float height, float length);
 
+void CreateTangents(Mesh* mesh);
+
 void CreateMesh(Mesh* mesh, const char* path)
 {
 	fastObjMesh* obj = fast_obj_read(path);
 	int count = obj->index_count;
 	mesh->positions.resize(count);
 	mesh->normals.resize(count);
+	mesh->tangents.resize(count);
+	mesh->bitangents.resize(count);
 	std::vector<fastObjIndex> indices(obj->index_count);
 	memcpy(indices.data(), obj->indices, indices.size() * sizeof(fastObjIndex));
 	
@@ -54,6 +58,8 @@ void CreateMesh(Mesh* mesh, const char* path)
 	}
 	fast_obj_destroy(obj);
 	mesh->count = count;
+
+	CreateTangents(mesh);
 
 	Upload(mesh);
 }
@@ -97,6 +103,8 @@ void CreateMesh(Mesh* mesh, ShapeType shape)
 		memcpy(mesh->normals.data(), par->normals, par->npoints * sizeof(Vector3));
 		mesh->tcoords.resize(par->npoints);
 		memcpy(mesh->tcoords.data(), par->tcoords, par->npoints * sizeof(Vector2));
+		mesh->tangents.resize(par->npoints);
+		mesh->bitangents.resize(par->npoints);
 		par_shapes_free_mesh(par);
 	}
 	else
@@ -105,6 +113,7 @@ void CreateMesh(Mesh* mesh, ShapeType shape)
 		GenCube(mesh, 1.0f, 1.0f, 1.0f);
 	}
 
+	CreateTangents(mesh);
 	// 3. Upload Mesh to GPU
 	Upload(mesh);
 }
@@ -115,9 +124,11 @@ void DestroyMesh(Mesh* mesh)
 	glDeleteBuffers(1, &mesh->tbo);
 	glDeleteBuffers(1, &mesh->nbo);
 	glDeleteBuffers(1, &mesh->pbo);
+	glDeleteBuffers(1, &mesh->tgbo);
+	glDeleteBuffers(1, &mesh->btgbo);
 	glDeleteVertexArrays(1, &mesh->vao);
 
-	mesh->vao = mesh->pbo = mesh->nbo = mesh->tbo = mesh->ebo = GL_NONE;
+	mesh->vao = mesh->pbo = mesh->nbo = mesh->tbo = mesh->ebo = mesh->tgbo = mesh->btgbo = GL_NONE;
 }
 
 void DrawMesh(const Mesh& mesh)
@@ -132,8 +143,8 @@ void DrawMesh(const Mesh& mesh)
 
 void Upload(Mesh* mesh)
 {
-	GLuint vao, pbo, nbo, tbo, ebo;
-	vao = pbo = nbo = tbo = ebo = GL_NONE;
+	GLuint vao, pbo, nbo, tbo, ebo, tgbo, btgbo;
+	vao = pbo = nbo = tbo = ebo = tgbo = btgbo = GL_NONE;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	
@@ -158,12 +169,28 @@ void Upload(Mesh* mesh)
 		glEnableVertexAttribArray(2);
 	}
 	
+	glGenBuffers(1, &tgbo);
+	glBindBuffer(GL_ARRAY_BUFFER, tgbo);
+	glBufferData(GL_ARRAY_BUFFER, mesh->tangents.size() * sizeof(Vector3), mesh->tangents.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), nullptr);
+	glEnableVertexAttribArray(3);
+	
+	
+	glGenBuffers(1, &btgbo);
+	glBindBuffer(GL_ARRAY_BUFFER, btgbo);
+	glBufferData(GL_ARRAY_BUFFER, mesh->bitangents.size() * sizeof(Vector3), mesh->bitangents.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), nullptr);
+	glEnableVertexAttribArray(4);
+
 	if (!mesh->indices.empty())
 	{
 		glGenBuffers(1, &ebo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indices.size() * sizeof(uint16_t), mesh->indices.data(), GL_STATIC_DRAW);
 	}
+
+
+
 
 	glBindVertexArray(GL_NONE);
 	glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
@@ -174,6 +201,8 @@ void Upload(Mesh* mesh)
 	mesh->nbo = nbo;
 	mesh->tbo = tbo;
 	mesh->ebo = ebo;
+	mesh->tgbo = tgbo;
+	mesh->btgbo = btgbo;
 }
 
 void GenCube(Mesh* mesh, float width, float height, float length)
@@ -281,4 +310,27 @@ void GenCube(Mesh* mesh, float width, float height, float length)
 	}
 
 	mesh->count = 36;
+}
+
+void CreateTangents(Mesh* mesh)
+{
+	/// Math from https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+	for (int i = 0; i < mesh->tangents.size(); i++)
+	{
+		// If only vectors let you access with [-1] :(
+		Vector3 edge1 = mesh->positions[i+1 >= mesh->tangents.size() ? 0 : i+1] - mesh->positions[i];
+		Vector3 edge2 = mesh->positions[i + 2 >= mesh->tangents.size() ? i + 2 > mesh->tangents.size() ? 1 : 0 : i + 2] - mesh->positions[i];
+		Vector2 deltaUV1 = mesh->tcoords[i+1 >= mesh->tangents.size() ? 0 : i + 1] - mesh->tcoords[i];
+		Vector2 deltaUV2 = mesh->tcoords[i+2 >= mesh->tangents.size() ? i+2 > mesh->tangents.size() ? 1 : 0 : i + 2] - mesh->tcoords[i];
+
+		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+		mesh->tangents[i].x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+		mesh->tangents[i].y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+		mesh->tangents[i].z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+		mesh->bitangents[i].x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+		mesh->bitangents[i].y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+		mesh->bitangents[i].z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+	}
 }

@@ -21,6 +21,9 @@ struct Mesh
 	std::vector<Vector3> normals;
 	std::vector<Vector2> tcoords;
 	std::vector<uint16_t> indices;
+	std::vector<Vector3> tangents;
+	std::vector<Vector3> bitangents;
+	Matrix TBN = MatrixIdentity();
 
 	// GPU data
 	GLuint vao = GL_NONE;	// Vertex array object
@@ -28,6 +31,8 @@ struct Mesh
 	GLuint nbo = GL_NONE;	// Normals buffer object
 	GLuint tbo = GL_NONE;	// Tcoords buffer object
 	GLuint ebo = GL_NONE;	// Element buffer object (indices)
+	GLuint tgbo = GL_NONE;	// tangent buffer object (indices)
+	GLuint btgbo = GL_NONE;	// bitangent buffer object (indices)
 };
 
 void CreateMesh(Mesh* mesh, const char* path);

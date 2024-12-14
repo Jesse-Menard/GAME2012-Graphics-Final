@@ -104,6 +104,7 @@
     <ClInclude Include="src\Mesh.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="assets\shaders\default.vert" />
     <None Include="assets\shaders\phong.frag" />
     <None Include="assets\shaders\points.vert" />
     <None Include="assets\shaders\texture_color.frag" />

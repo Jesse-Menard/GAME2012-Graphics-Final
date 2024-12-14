@@ -139,13 +139,12 @@ int main(void)
     stbi_image_free(pixelsPotBase);
     //pixelsPotBase = nullptr;
 
-    // Step 1: Load image from disk to CPU
+    // Wall textures from https://polyhaven.com/a/brick_wall_001
     int texWallWidth = 0;
     int texWallHeight = 0;
     int texWallBaseChannels = 0;
     stbi_uc* pixelsWallBase = stbi_load("./assets/textures/WallDiffuse.jpg", &texWallWidth, &texWallHeight, &texWallBaseChannels, 0);
 
-    // Step 2: Upload image from CPU to GPU
     GLuint texWallBase = GL_NONE;
     glGenTextures(1, &texWallBase);
     glBindTexture(GL_TEXTURE_2D, texWallBase);
@@ -158,13 +157,11 @@ int main(void)
     pixelsWallBase = nullptr;
 
 
-    // Step 1: Load image from disk to CPU
     int texWallNormalWidth = 0;
     int texWallNormalHeight = 0;
     int texWallNormalBaseChannels = 0;
     stbi_uc* pixelsWallNormal = stbi_load("./assets/textures/WallNormal.jpg", &texWallNormalWidth, &texWallNormalHeight, &texWallNormalBaseChannels, 0);
     
-    // Step 2: Upload image from CPU to GPU
     GLuint texWallNormal = GL_NONE;
     glGenTextures(1, &texWallNormal);
     glBindTexture(GL_TEXTURE_2D, texWallNormal);
@@ -177,13 +174,11 @@ int main(void)
     pixelsWallNormal = nullptr;
 
 
-    // Step 1: Load image from disk to CPU
     int texWallSpecWidth = 0;
     int texWallSpecHeight = 0;
     int texWallSpecBaseChannels = 0;
     stbi_uc* pixelsWallSpec = stbi_load("./assets/textures/WallSpec.jpg", &texWallSpecWidth, &texWallSpecHeight, &texWallSpecBaseChannels, 0);
     
-    // Step 2: Upload image from CPU to GPU
     GLuint texWallSpec = GL_NONE;
     glGenTextures(1, &texWallSpec);
     glBindTexture(GL_TEXTURE_2D, texWallSpec);
@@ -218,12 +213,16 @@ int main(void)
     bool camToggle = true;
 
     Mesh potMesh, cubeMesh, sphereMesh, planeMesh;
-    CreateMesh(&potMesh, "assets/meshes/potemkin.obj");
-    CreateMesh(&cubeMesh, CUBE);
-    CreateMesh(&sphereMesh, SPHERE);
+    //CreateMesh(&potMesh, "assets/meshes/potemkin.obj");
+    //CreateMesh(&cubeMesh, CUBE);
     CreateMesh(&planeMesh, PLANE);
+    CreateMesh(&sphereMesh, SPHERE);
+    
 
-    Vector3 planeColor = { 0.3, 0.3, 0.3 };
+    //planeMesh.TBN.x
+
+    //mat3 TBN = mat3(T, B, N);
+
 
     Vector3 directionLightPosition = { 10.0f, 10.0f, 10.0f };
     Vector3 directionLightColor = { 1.0f, 1.0f, 1.0f };
@@ -444,8 +443,43 @@ int main(void)
         mvp = world * view * proj;
         
         normal = Transpose(Invert(world));
+        Vector3 why = { 1.0f, 1.0f, 1.0f };
+        for (int i = 0; i < planeMesh.tangents.size(); i++)
+        {
+            Vector3 T = Normalize((world * Vector4{ planeMesh.tangents[i].x, planeMesh.tangents[i].y, planeMesh.tangents[i].z, 0.0f }));
+            Vector3 B = Normalize((world * Vector4{ planeMesh.bitangents[i].x, planeMesh.bitangents[i].y, planeMesh.bitangents[i].z, 0.0f }));
+            Vector3 N = Normalize((world * Vector4{ planeMesh.normals[i].x, planeMesh.normals[i].y, planeMesh.normals[i].z, 0.0f}));
 
-        
+            Matrix TBN = { T.x, T.y, T.z, 0.0f,
+                           B.x, B.y, B.z, 0.0f,
+                           N.x, N.y, N.z, 0.0f,
+                           0.0f, 0.0f, 0.0f, 0.0f            
+            };
+            int stop;
+            stop = 1;
+        }        
+
+        /// Math from https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+
+        Vector3 edge1 = planeMesh.positions[1] - planeMesh.positions[0];
+        Vector3 edge2 = planeMesh.positions[2] - planeMesh.positions[0];
+        Vector2 deltaUV1 = planeMesh.tcoords[1] - planeMesh.tcoords[0];
+        Vector2 deltaUV2 = planeMesh.tcoords[2] - planeMesh.tcoords[0];
+
+        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+        Vector3 tangent1;
+        tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+        tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+        Vector3 bitangent1;
+        bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+        bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+        bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+
+
         u_normal = glGetUniformLocation(shaderProgram, "u_normal");
         u_world = glGetUniformLocation(shaderProgram, "u_world");
         u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
