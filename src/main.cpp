@@ -144,7 +144,9 @@ int main(void)
     float camYaw = 0;
     float panScale = 0.25f;
     Vector3 frontView = V3_FORWARD;
-    float planeRotation = 0;
+    float planeRotationX = 0;
+    float planeRotationY = 0;
+    float planeRotationZ = 0;
 
     // Whether we render the imgui demo widgets
     bool imguiDemo = false;
@@ -351,7 +353,7 @@ int main(void)
         // ------------------------------------------------------------------------------------------
 
         pointLightPosition = Multiply(pointLightPosition, RotateZ(sin(dt * 15)));
-        world = Translate(-0.5, -0.5, 0) * RotateY(DEG2RAD * planeRotation) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
+        world = Translate(-0.5, -0.5, 0) * RotateX(DEG2RAD * planeRotationX) *  RotateY(DEG2RAD * planeRotationY) *  RotateZ(DEG2RAD * planeRotationY) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
 
         shaderProgram = shaderPhong;
         glUseProgram(shaderProgram);
@@ -523,7 +525,9 @@ int main(void)
             ImGui::Checkbox("Spot Light", (bool*) & allowSpotLight);
             ImGui::NewLine();
 
-            ImGui::SliderFloat("Plane Rotation", &planeRotation, 0.0f, 360.0f);
+            ImGui::SliderFloat("Plane Rotation X", &planeRotationX, 0.0f, 360.0f);
+            ImGui::SliderFloat("Plane Rotation Y", &planeRotationY, 0.0f, 360.0f);
+            ImGui::SliderFloat("Plane Rotation Z", &planeRotationZ, 0.0f, 360.0f);
             ImGui::NewLine();
 
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
@@ -566,11 +570,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 
     gKeysCurr[key] = action;
-
-    // Key logging
-    //const char* name = glfwGetKeyName(key, scancode);
-    //if (action == GLFW_PRESS)
-    //    printf("%s\n", name);
 }
 
 void error_callback(int error, const char* description)

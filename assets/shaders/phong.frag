@@ -79,17 +79,13 @@ vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 li
     vec3 lighting = phong(position, normal, u_cameraPosition, u_spotLightPosition, color, u_ambientFactor, u_diffuseFactor, u_specularPower);
     // dot(a,b) = |a||b|cos0 <--- if thhis is bigger then FOV, = 0   /// if a and b are normalized, eq turns into dot(a,b) =cos0, acos(dot(a,b)) = 0 
     
-    vec3 displacement = normalize(position - u_spotLightPosition); //(position.x - u_spotLightPosition.x, position.y - u_spotLightPosition.y, position.z - u_spotLightPosition.z);
+    vec3 displacement = normalize(position - u_spotLightPosition);
     
-    float testAngle = degrees(acos(dot(displacement, direction)));
+    float angle = degrees(acos(dot(displacement, direction)));    
+
+    // value of 1-0 with 1 being at edge of FOV, and 0 being at edge of FOV+Blend
+    lighting *= clamp(1 - ((angle - fov) /fovBlend), 0, 1);
     
-    if (fov + fovBlend < testAngle)
-        lighting *= 0;
-    else if (fov > testAngle)
-        lighting *= 1;
-    else
-        lighting *= 1 - ((testAngle - fov) /fovBlend);
-        // value of 1-0 with 1 being at edge of FOV, and 0 being at edge of FOV+Blend
     return lighting;
 }
 
@@ -101,7 +97,6 @@ void main()
     normalMap = normalize(TBN * normalMap);
     vec3 lighting;
 
-
     // The best booleans
     if(u_allowDirectionLight > 0)
         lighting += direction_light(u_lightDirection, normal, u_cameraPosition, u_directionLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower);
@@ -110,7 +105,7 @@ void main()
         lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap) , u_cameraPosition, u_pointLightPosition, u_pointLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius);
 
     if(u_allowSpotLight > 0)
-        lighting += spot_light(position, u_spotLightDirection, normal, u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);
+        lighting += spot_light(position, u_spotLightDirection, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_spotLightPosition, u_spotLightColor, u_ambientFactor, u_diffuseFactor, u_specularPower, u_lightRadius, u_fov, u_fovBlend);
 
     
     gl_FragColor = vec4(lighting * model * u_intensity, 1.0) ;
