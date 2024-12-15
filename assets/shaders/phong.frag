@@ -81,7 +81,7 @@ vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 li
     
     float angle = degrees(acos(dot(displacement, normalize(direction))));    
 
-    // value of 1-0 with 1 being at edge of FOV, and 0 being at edge of FOV+Bloom
+    // value of 1-0 with 1 being at edge of FOV, and 0 being at edge of FOV + Bloom
     lighting *= clamp(1 - ((angle - fov) /fovBloom), 0, 1);
     
     return lighting;

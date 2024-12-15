@@ -58,7 +58,7 @@ void Light::Render(GLint program, int index)
     glUniform1i(glGetUniformLocation(program, location.c_str()), type);
 }
 
-void Light::DrawLight(GLint program, Matrix* mvp, Mesh mesh, int index)
+void Light::DrawLight(GLint program, Matrix* mvp, Mesh mesh)
 {
     glUseProgram(program);
 

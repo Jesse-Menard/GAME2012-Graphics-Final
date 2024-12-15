@@ -79,6 +79,7 @@ struct Vector3 {
     RMAPI Vector3 operator-=(Vector3 v);
     RMAPI Vector3 operator*=(Vector3 v);
     RMAPI Vector3 operator/=(Vector3 v);
+    RMAPI bool operator==(Vector3 v);
 
     RMAPI Vector3 operator+=(float f);
     RMAPI Vector3 operator-=(float f);
@@ -2548,6 +2549,11 @@ RMAPI Vector3 Vector3::operator/=(Vector3 v)
     y /= v.y;
     z /= v.z;
     return *this;
+}
+
+inline RMAPI bool Vector3::operator==(Vector3 v)
+{
+    return x == v.x && y == v.y && z == v.z;
 }
 
 RMAPI Vector3 Vector3::operator+=(float f)

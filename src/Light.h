@@ -31,5 +31,5 @@ public:
 	float FOVbloom = 10;	
 
 	void Render(GLint program, int index);
-	void DrawLight(GLint shader, Matrix *mvp, Mesh mesh, int index);
+	void DrawLight(GLint program, Matrix *mvp, Mesh mesh);
 };

@@ -5,17 +5,21 @@
 class RenderObject
 {
 public:
-	RenderObject(Vector3 pos, Vector3 scale, Vector3 facing, const char* obj_path, GLuint texture, GLuint normalMap);
-	RenderObject(Vector3 pos, Vector3 scale, Vector3 facing, ShapeType shape, GLuint texture, GLuint normalMap);
+	RenderObject() {};
+	RenderObject(const char* obj_path);
+	RenderObject(ShapeType shape);
+	RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 facing, const char* obj_path, GLuint texture, GLuint normalMap);
+	RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 facing, ShapeType shape, GLuint texture, GLuint normalMap);
 	~RenderObject();
 
-	Vector3 position;
-	Vector3 scale;
-	Vector3 facing;
+	Vector3 position = V3_ZERO;
+	Vector3 scale = V3_ONE;
+	Vector3 facing = V3_FORWARD;
 	Mesh mesh;
 
-	GLuint texture;
-	GLuint normalMap;
-};
+	GLuint texture = NULL;
+	GLuint normalMap = NULL;
+	GLuint specMap = NULL;
 
-void Render();
+	void Render(GLint program, Matrix* mvp, Matrix* world);
+};

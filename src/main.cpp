@@ -38,8 +38,10 @@ bool IsKeyPressed(int key);
 void Print(Matrix m);
 
 Vector3 CalcFacingVector3(const Vector3 target, const Vector3 source);
+void LoadTexture(GLuint* texture, const char* filename, bool hasAlpha = false);
 
 std::vector<Light> lights;
+std::vector<RenderObject> objects;
 
 int main(void)
 {
@@ -86,54 +88,18 @@ int main(void)
     stbi_set_flip_vertically_on_load(true);
 
     // Wall textures from https://polyhaven.com/a/brick_wall_001
-    int texWallWidth = 0;
-    int texWallHeight = 0;
-    int texWallBaseChannels = 0;
-    stbi_uc* pixelsWallBase = stbi_load("./assets/textures/WallDiffuse.jpg", &texWallWidth, &texWallHeight, &texWallBaseChannels, 0);
-
     GLuint texWallBase = GL_NONE;
-    glGenTextures(1, &texWallBase);
-    glBindTexture(GL_TEXTURE_2D, texWallBase);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWallWidth, texWallHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelsWallBase);
-    stbi_image_free(pixelsWallBase);
-    pixelsWallBase = nullptr;
-
-    int texWallNormalWidth = 0;
-    int texWallNormalHeight = 0;
-    int texWallNormalBaseChannels = 0;
-    stbi_uc* pixelsWallNormal = stbi_load("./assets/textures/WallNormal.jpg", &texWallNormalWidth, &texWallNormalHeight, &texWallNormalBaseChannels, 0);
-    
+    LoadTexture(&texWallBase, "./assets/textures/WallDiffuse.jpg");
     GLuint texWallNormal = GL_NONE;
-    glGenTextures(1, &texWallNormal);
-    glBindTexture(GL_TEXTURE_2D, texWallNormal);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWallNormalWidth, texWallNormalHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelsWallNormal);
-    stbi_image_free(pixelsWallNormal);
-    pixelsWallNormal = nullptr;
-
-
-    int texWallSpecWidth = 0;
-    int texWallSpecHeight = 0;
-    int texWallSpecBaseChannels = 0;
-    stbi_uc* pixelsWallSpec = stbi_load("./assets/textures/WallSpec.jpg", &texWallSpecWidth, &texWallSpecHeight, &texWallSpecBaseChannels, 0);
-    
+    LoadTexture(&texWallNormal, "./assets/textures/WallNormal.jpg");
     GLuint texWallSpec = GL_NONE;
-    glGenTextures(1, &texWallSpec);
-    glBindTexture(GL_TEXTURE_2D, texWallSpec);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWallSpecWidth, texWallSpecHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixelsWallSpec);
-    stbi_image_free(pixelsWallSpec);
-    pixelsWallSpec = nullptr;
+    LoadTexture(&texWallSpec, "./assets/textures/WallSpec.jpg");
+
+    // Floor from https://polyhaven.com/a/recycled_brick_floor
+    GLuint floorTex = GL_NONE;
+    LoadTexture(&floorTex, "./assets/textures/Floor.jpg");
+    GLuint floorNormal = GL_NONE;
+    LoadTexture(&floorNormal, "./assets/textures/FloorNormal.jpg");
 
     Vector3 camPos{ 0.0f, 2.0f, 3.0f };
     float fov = 75.0f * DEG2RAD;
@@ -154,30 +120,29 @@ int main(void)
     // Whether we render the imgui demo widgets
     bool imguiDemo = false;
     bool camToggle = true;
+    int normalToggle = false;
 
-    Mesh sphereMesh, planeMesh;
-    CreateMesh(&planeMesh, PLANE);
+    // ENABLE BACKFACE CULLING
+    glEnable(GL_CULL_FACE);
+
+    objects.resize(20);
+    objects[0] = RenderObject{ {0.0f, 0.0f, -5.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD, PLANE, texWallBase, texWallNormal};
+    objects[1] = RenderObject{ {-5.0f, 0.0f, 0.0f}, V3_ONE * 5.0f, V2_ONE, {0.0f, 0.0f,-1.0f}, PLANE, texWallBase, texWallNormal };
+    objects[2] = RenderObject{ {0.0f, 0.0f, -0.0f}, V3_ONE * 5.0f, V2_ONE, V3_RIGHT, PLANE, texWallBase, texWallNormal }; //
+    objects[3] = RenderObject{ {-5.0f, 0.0f, -5.0f}, V3_ONE * 5.0f, V2_ONE, V3_RIGHT * -1.0f, PLANE, texWallBase, texWallNormal };
+    objects[4] = RenderObject{ {0.0f, 0.0f, 0.0f}, V3_ONE * 5.0f, V2_ONE, V3_UP, PLANE, floorTex, floorNormal};
+
+    Mesh sphereMesh;
     CreateMesh(&sphereMesh, SPHERE);
 
     lights.resize(20);
-    //  lights[0] = Light{ {10.0, 10.0f, 10.0f}, {1.0f, 1.0f, 1.0f}, DIRECTION_LIGHT, CalcFacingVector3({0, 0, 0}, {10.0f, 10.0f, 10.0f})};
-    //  lights[0].intensity = 0.4f;
-    //  lights[0].specularScale = 2.0f;
-    //  
-    //  lights[1] = Light{ {-2.0f, -2.0f, -1.0f}, {1.0f, 0.0f, 0.0f}, POINT_LIGHT};
-    //  
-    //  lights[2] = Light{{3.0f, 3.0f, -1.0f}, {0.0f, 1.0f, 0.0f}, POINT_LIGHT};
-    lights[1] = Light{ {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f}, SPOT_LIGHT, {0.0f, 1.0f, -1.0f}, 20, 5};
-
-    float lightRadius = 2.5f;
-    float lightAngle = 90.0f * DEG2RAD;
+    lights[0] = Light{ {10.0, 10.0f, 10.0f}, {1.0f, 1.0f, 1.0f}, DIRECTION_LIGHT, CalcFacingVector3({0, 0, 0}, {10.0f, 10.0f, 10.0f})};
+    lights[0].intensity = 2.0f;
+    lights[0].specularScale = 2.0f;
 
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
-    float specularPower = 64.0f;
-    float intensity = 3.0f;
 
-    int normalToggle = false;
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -197,111 +162,115 @@ int main(void)
         float time = glfwGetTime();
         timePrev = time;
 
-        pmx = mx; pmy = my;
-        glfwGetCursorPos(window, &mx, &my);
-        if (camToggle)
+        // Input
         {
-            // Looping cam
-            if (mx > 1280)
+
+            pmx = mx; pmy = my;
+            glfwGetCursorPos(window, &mx, &my);
+            if (camToggle)
             {
-                glfwSetCursorPos(window, 0.0, my);
+                // Looping cam
+                if (mx > 1280)
+                {
+                    glfwSetCursorPos(window, 0.0, my);
 
-                mx = 0.0;
-                pmx = 0.0;
+                    mx = 0.0;
+                    pmx = 0.0;
+                }
+                else if (mx < 0)
+                {
+                    glfwSetCursorPos(window, 1280.0, my);
+
+                    mx = 1280.0;
+                    pmx = 1280.0;
+                }
+                if (my > 720)
+                {
+                    glfwSetCursorPos(window, mx, 0.0);
+
+                    my = 0.0;
+                    pmy = 0.0;
+                }
+                else if (my < 0)
+                {
+                    glfwSetCursorPos(window, mx, 720.0);
+
+                    my = 720.0;
+                    pmy = 720.0;
+                }
             }
-            else if (mx < 0)
+            Vector2 mouseDelta = { mx - pmx, my - pmy };
+
+            if (IsKeyPressed(GLFW_KEY_I))
+                imguiDemo = !imguiDemo;
+
+            if (IsKeyPressed(GLFW_KEY_C))
+                camToggle = !camToggle;
+
+            if (IsKeyPressed(GLFW_KEY_N))
+                normalToggle = !normalToggle; // I know what I'm doing intellisense, go away >:(
+
+            if (!camToggle)
             {
-                glfwSetCursorPos(window, 1280.0, my);
-
-                mx = 1280.0;
-                pmx = 1280.0;
+                mouseDelta = V2_ZERO;
             }
-            if (my > 720)
+
+            camPitch -= mouseDelta.y * panScale;
+            if (camPitch > 88)
             {
-                glfwSetCursorPos(window, mx, 0.0);
-
-                my = 0.0;
-                pmy = 0.0;
+                camPitch = 88;
             }
-            else if (my < 0)
+            else if (camPitch < -88)
             {
-                glfwSetCursorPos(window, mx, 720.0);
-
-                my = 720.0;
-                pmy = 720.0;
+                camPitch = -88;
             }
-        }
-        Vector2 mouseDelta = { mx - pmx, my - pmy };
 
-        if (IsKeyPressed(GLFW_KEY_I))
-            imguiDemo = !imguiDemo;
-        
-        if (IsKeyPressed(GLFW_KEY_C))
-            camToggle = !camToggle;
-        
-        if (IsKeyPressed(GLFW_KEY_N))
-            normalToggle = !normalToggle; // I know what I'm doing intellisense, go away >:(
+            camYaw -= mouseDelta.x * panScale;
+            Matrix camRotation = ToMatrix(FromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
 
-        if (!camToggle)
-        {
-            mouseDelta = V2_ZERO;
-        }
+            Vector3 camX = { camRotation.m0, camRotation.m1, camRotation.m2 };
+            Vector3 camY = { camRotation.m4, camRotation.m5, camRotation.m6 };
+            Vector3 camZ = { camRotation.m8, camRotation.m9, camRotation.m10 };
 
-        camPitch -= mouseDelta.y * panScale;
-        if (camPitch > 88)
-        {
-            camPitch = 88;
-        }
-        else if (camPitch < -88)
-        {
-            camPitch = -88;
-        }
+            frontView = Multiply(V3_FORWARD, camRotation);
 
-        camYaw -= mouseDelta.x * panScale;
-        Matrix camRotation = ToMatrix(FromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
+            // Slows cam when shifted
+            float camTranslateValue = 0.01;
+            if (IsKeyDown(GLFW_KEY_LEFT_SHIFT))
+            {
+                camTranslateValue = 0.02;
+            }
 
-        Vector3 camX = { camRotation.m0, camRotation.m1, camRotation.m2 };
-        Vector3 camY = { camRotation.m4, camRotation.m5, camRotation.m6 };
-        Vector3 camZ = { camRotation.m8, camRotation.m9, camRotation.m10 };
-
-        frontView = Multiply(V3_FORWARD, camRotation);
-        
-        // Slows cam when shifted
-        float camTranslateValue = 0.01;
-        if (IsKeyDown(GLFW_KEY_LEFT_SHIFT))
-        {
-            camTranslateValue = 0.02;
-        }
-
-        if (IsKeyDown(GLFW_KEY_W))
-        {
-            // forwards
-            camPos -= camZ * camTranslateValue;
-        }
-        if (IsKeyDown(GLFW_KEY_S))
-        {
-            // back
-            camPos += camZ * camTranslateValue;
-        }
-        if (IsKeyDown(GLFW_KEY_A))
-        {
-            // left
-            camPos -= camX * camTranslateValue;
-        }
-        if (IsKeyDown(GLFW_KEY_D))
-        {
-            // right
-            camPos += camX * camTranslateValue;
-        }
-        if (IsKeyDown(GLFW_KEY_E))
-        {
-            // up
-            camPos += camY * camTranslateValue;
-        }
-        if (IsKeyDown(GLFW_KEY_Q))
-        {
-            // down
-            camPos -= camY * camTranslateValue;
+            if (IsKeyDown(GLFW_KEY_W))
+            {
+                // forwards
+                camPos -= camZ * camTranslateValue;
+            }
+            if (IsKeyDown(GLFW_KEY_S))
+            {
+                // back
+                camPos += camZ * camTranslateValue;
+            }
+            if (IsKeyDown(GLFW_KEY_A))
+            {
+                // left
+                camPos -= camX * camTranslateValue;
+            }
+            if (IsKeyDown(GLFW_KEY_D))
+            {
+                // right
+                camPos += camX * camTranslateValue;
+            }
+            if (IsKeyDown(GLFW_KEY_E))
+            {
+                // up
+                camPos += camY * camTranslateValue;
+            }
+            if (IsKeyDown(GLFW_KEY_Q))
+            {
+                // down
+                camPos -= camY * camTranslateValue;
+            }
         }
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -332,18 +301,18 @@ int main(void)
         // ------------------------------------------------------------------------------------------
 
 
-        world = Translate(-0.5, -0.5, 0) * RotateX(DEG2RAD * planeRotationX) *  RotateY(DEG2RAD * planeRotationY) *  RotateZ(DEG2RAD * planeRotationY) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
+        //world = Translate(-0.5, -0.5, 0) * RotateX(DEG2RAD * planeRotationX) *  RotateY(DEG2RAD * planeRotationY) *  RotateZ(DEG2RAD * planeRotationY) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
 
         shaderProgram = shaderPhong;
         glUseProgram(shaderProgram);
-        mvp = world * view * proj;
+        //mvp = world * view * proj;
         
         normal = Transpose(Invert(world));
 
         u_normal = glGetUniformLocation(shaderProgram, "u_normal");
-        u_world = glGetUniformLocation(shaderProgram, "u_world");
-        u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
-        
+        //u_world = glGetUniformLocation(shaderProgram, "u_world");
+        //u_mvp = glGetUniformLocation(shaderProgram, "u_mvp");
+
         u_cameraPosition = glGetUniformLocation(shaderProgram, "u_cameraPosition");
         
         u_ambientFactor = glGetUniformLocation(shaderProgram, "u_ambientFactor");
@@ -351,9 +320,9 @@ int main(void)
         u_normalToggle = glGetUniformLocation(shaderProgram, "u_normalToggle");
         
         glUniformMatrix3fv(u_normal, 1, GL_FALSE, ToFloat9(normal).v);
-        glUniformMatrix4fv(u_world, 1, GL_FALSE, ToFloat16(world).v);
-        glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
-        
+        //  glUniformMatrix4fv(u_world, 1, GL_FALSE, ToFloat16(world).v);
+        //  glUniformMatrix4fv(u_mvp, 1, GL_FALSE, ToFloat16(mvp).v);
+
 
         glUniform3fv(u_cameraPosition, 1, &camPos.x);     
         
@@ -361,30 +330,46 @@ int main(void)
         glUniform1f(u_diffuseFactor, diffuseFactor);
         glUniform1i(u_normalToggle, normalToggle);
 
-        u_normalMap = glGetUniformLocation(shaderProgram, "u_normalMap");
-        u_tex = glGetUniformLocation(shaderProgram, "u_tex");
 
-        glUniform1i(u_normalMap, 0);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texWallNormal);
+        //  u_normalMap = glGetUniformLocation(shaderProgram, "u_normalMap");
+        //  u_tex = glGetUniformLocation(shaderProgram, "u_tex");
+        //  
+        //  glUniform1i(u_normalMap, 0);
+        //  glActiveTexture(GL_TEXTURE0);
+        //  glBindTexture(GL_TEXTURE_2D, texWallNormal);
+        //  
+        //  glUniform1i(u_tex, 1);
+        //  glActiveTexture(GL_TEXTURE0 + 1); // this caught me up for so long.. lol
+        //  glBindTexture(GL_TEXTURE_2D, texWallBase);
+        //  
+        //  u_tex = glGetUniformLocation(shaderProgram, "u_Spec");
+        //  
+        //  glUniform1i(u_tex, 2);
+        //  glActiveTexture(GL_TEXTURE0 + 2); // this caught me up for so long.. lol
+        //  glBindTexture(GL_TEXTURE_2D, texWallSpec);
+        //  
+        //  DrawMesh(planeMesh);
 
-        glUniform1i(u_tex, 1);
-        glActiveTexture(GL_TEXTURE0 + 1); // this caught me up for so long.. lol
-        glBindTexture(GL_TEXTURE_2D, texWallBase);
+        // Objects
 
-        u_tex = glGetUniformLocation(shaderProgram, "u_Spec");
+        glUseProgram(shaderPhong);
+        mvp = world * view * proj;
 
-        glUniform1i(u_tex, 2);
-        glActiveTexture(GL_TEXTURE0 + 2); // this caught me up for so long.. lol
-        glBindTexture(GL_TEXTURE_2D, texWallSpec);
-
-
-        DrawMesh(planeMesh);
+        for (int i = 0; i < objects.size(); i++)
+        {
+            if (objects[i].texture != NULL)
+            {
+                world = Scale(V3_ONE * objects[i].scale) * Translate(objects[i].position) * // Rotation, because it doensn't like 180
+                    (objects[i].facing == V3_FORWARD * -1.0f ? RotateY(180 * DEG2RAD) : ToMatrix(FromTo(V3_FORWARD, Normalize(objects[i].facing))));
+                mvp = world * view * proj;
+                objects[i].Render(shaderPhong, &mvp, &world);
+            }
+        }
 
         // Lights
 
-        lights[0].position = Multiply(lights[0].position, RotateZ(sin(dt * 15)));
-        lights[1].direction = CalcFacingVector3(Vector3{ 0 }, lights[1].position);
+        //  lights[0].position = Multiply(lights[0].position, RotateZ(sin(dt * 15)));
+        //  lights[0].direction = CalcFacingVector3(Vector3{ 0 }, lights[0].position);
 
         for (int i = 0; i < lights.size(); i++)
         {
@@ -393,7 +378,7 @@ int main(void)
             world = Scale(V3_ONE * lights[i].radius) * Translate(lights[i].position);
             mvp = world * view * proj;
 
-            lights[i].DrawLight(shaderUniformColor, &mvp, sphereMesh, i);
+            lights[i].DrawLight(shaderUniformColor, &mvp, sphereMesh);
         }
 
         // ------------------------------------------------------------------------------------------
@@ -426,8 +411,6 @@ int main(void)
 
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
-            ImGui::SliderFloat("Specular", &specularPower, 0.0f, 256.0f);
-            ImGui::SliderFloat("Intensity", &intensity, 1.0f, 20.0f);
             ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle);
 
             ImGui::SliderFloat("Near", &near, 0.0f, 10.0f);
@@ -618,4 +601,26 @@ void Print(Matrix m)
 Vector3 CalcFacingVector3(const Vector3 target, const Vector3 source)
 {
     return Normalize(Subtract(target, source));
+}
+
+void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha)
+{
+    int texWidth = 0;
+    int texHeight = 0;
+    int texChannels = 0;
+    stbi_uc* pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, 0);
+
+    *texture = GL_NONE;
+    glGenTextures(1, &*texture);
+    glBindTexture(GL_TEXTURE_2D, *texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    if(hasAlpha)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    else
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    stbi_image_free(pixels);
+    pixels = nullptr;
 }

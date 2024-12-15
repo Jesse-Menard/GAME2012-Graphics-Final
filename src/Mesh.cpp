@@ -12,7 +12,7 @@ void GenCube(Mesh* mesh, float width, float height, float length);
 
 void CreateTangents(Mesh* mesh);
 
-void CreateMesh(Mesh* mesh, const char* path)
+void CreateMesh(Mesh* mesh, const char* path, Vector2 texScale)
 {
 	fastObjMesh* obj = fast_obj_read(path);
 	int count = obj->index_count;
@@ -49,7 +49,7 @@ void CreateMesh(Mesh* mesh, const char* path)
 			// Using the obj file's indices, populate the mesh->tcoords with the object's vertex texture coordinates
 			fastObjIndex idx = obj->indices[i];
 			Vector2 tcoord = ((Vector2*)obj->texcoords)[idx.t];
-			mesh->tcoords[i] = tcoord;
+			mesh->tcoords[i] = tcoord * texScale;
 		}
 	}
 	else
@@ -64,7 +64,7 @@ void CreateMesh(Mesh* mesh, const char* path)
 	Upload(mesh);
 }
 
-void CreateMesh(Mesh* mesh, ShapeType shape)
+void CreateMesh(Mesh* mesh, ShapeType shape, Vector2 texScale)
 {
 	// 1. Generate par_shapes_mesh
 	par_shapes_mesh* par = nullptr;
@@ -103,6 +103,11 @@ void CreateMesh(Mesh* mesh, ShapeType shape)
 		memcpy(mesh->normals.data(), par->normals, par->npoints * sizeof(Vector3));
 		mesh->tcoords.resize(par->npoints);
 		memcpy(mesh->tcoords.data(), par->tcoords, par->npoints * sizeof(Vector2));
+		for (int i = 0; i < mesh->tcoords.size(); i++)
+		{
+			mesh->tcoords[i].x *= texScale.x;
+			mesh->tcoords[i].y *= texScale.y;
+		}
 		mesh->tangents.resize(par->npoints);
 		mesh->bitangents.resize(par->npoints);
 		par_shapes_free_mesh(par);
