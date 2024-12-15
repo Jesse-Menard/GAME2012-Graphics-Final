@@ -4,6 +4,7 @@ in vec3 position;
 in vec3 normal;
 in vec2 tcoord;
 in mat3 TBN;
+in vec3 tangentFragmentPos;
 
 out vec4 FragColor;
 
@@ -11,11 +12,13 @@ uniform vec3 u_cameraPosition;
 
 uniform float u_ambientFactor;
 uniform float u_diffuseFactor;
+uniform float u_heightScale;
 uniform int u_normalToggle;
 
 uniform sampler2D u_tex;
 uniform sampler2D u_spec;
 uniform sampler2D u_normalMap;
+uniform sampler2D u_depthMap;
 
 struct Light {
     vec3 position;
@@ -30,7 +33,14 @@ struct Light {
 	float FOV;
 	float FOVbloom;
 };
-uniform Light u_lights[20];
+uniform Light u_lights[40];
+
+vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
+{
+    float height = texture(u_depthMap, texCoords).r;
+    vec2 p = viewDir.xy / viewDir.z * (height * u_heightScale);
+    return texCoords - p;
+}
 
 vec3 phong(vec3 position, vec3 normal, vec3 camera, vec3 light, vec3 color, float ambientFactor, float diffuseFactor, float specularPower)
 {
@@ -89,13 +99,21 @@ vec3 spot_light(vec3 position, vec3 direction, vec3 normal, vec3 camera, vec3 li
 
 void main()
 {
-    vec3 model = texture(u_tex, tcoord).rgb;
-    vec3 normalMap = texture(u_normalMap, tcoord).rgb;
+    vec3 viewDirection = normalize((TBN * u_cameraPosition) - tangentFragmentPos);
+    vec2 newTcoord = ParallaxMapping(tcoord, viewDirection);
+
+    //if(texCoords.x > 1.0 || texCoords.y > 1.0 || texCoords.x < 0.0 || texCoords.y < 0.0)
+    //    discard;
+
+    vec3 model = texture(u_tex, newTcoord).rgb;
+    vec3 normalMap = texture(u_normalMap, newTcoord).rgb;
     normalMap = normalize(normalMap * 2.0 - 1.0);
     normalMap = normalize(TBN * normalMap);
+
+
     vec3 lighting;
 
-    for( int i = 0; i < 20; i++)
+    for( int i = 0; i < 40; i++)
     {
         if(u_lights[i].type == 0)
             lighting += direction_light(u_lights[i].direction, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale);

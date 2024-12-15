@@ -14,6 +14,8 @@ out vec3 normal;
 out vec2 tcoord;
 out mat3 TBN;
 
+out vec3 tangentFragmentPos;
+
 void main()
 {
 	position = (u_world * vec4(aPosition, 1.0)).xyz;
@@ -32,8 +34,10 @@ void main()
 	// then retrieve perpendicular vector B with the cross product of T and N
 	vec3 B = cross(N, T);
 	
-	TBN = mat3(T, B, N);  
+	TBN = transpose(mat3(T, B, N));
+	
+	tangentFragmentPos = TBN * position;
 
 
-   gl_Position = u_mvp * vec4(aPosition, 1.0);
+	gl_Position = u_mvp * vec4(aPosition, 1.0);
 }

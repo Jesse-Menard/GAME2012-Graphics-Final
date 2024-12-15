@@ -38,7 +38,7 @@ bool IsKeyPressed(int key);
 void Print(Matrix m);
 
 Vector3 CalcFacingVector3(const Vector3 target, const Vector3 source);
-void LoadTexture(GLuint* texture, const char* filename, bool hasAlpha = false);
+void LoadTexture(GLuint* texture, const char* filename, bool hasAlpha = false, bool singleChannel = false);
 
 std::vector<Light> lights;
 std::vector<RenderObject> objects;
@@ -99,6 +99,8 @@ int main(void)
     LoadTexture(&texStone, "./assets/textures/Stone.jpg");
     GLuint texStoneNormal = GL_NONE;
     LoadTexture(&texStoneNormal, "./assets/textures/StoneNormal.jpg");
+    GLuint texStoneHeight = GL_NONE;
+    LoadTexture(&texStoneHeight, "./assets/textures/StoneHeightInv.jpg");
 
     // Floor from https://polyhaven.com/a/recycled_brick_floor
     GLuint floorTex = GL_NONE;
@@ -150,51 +152,64 @@ int main(void)
     //CreateMesh(&horse, "./assets/meshes/horse.obj");
 
     objects.resize(20); // positions from bottom corner of obj, will center if have time (doubt, heh) 
-    objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 30.0f, 1.0f}, V2_ONE, V3_UP, PLANE, floorTex, floorNormal };
-    objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, V2_ONE, {0.0f, -1.0f, 0.0f}, PLANE, floorTex, floorNormal};
+    objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 30.0f, 1.0f}, V2_ONE, {-90.0f,0.0f,0.0f}, PLANE, floorTex, floorNormal, NULL};
+    objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, V2_ONE, {90.0f, 0.0f, 0.0f}, PLANE, floorTex, floorNormal, NULL};
     
     // Outside Walls
-    objects[2] = RenderObject{ {-15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD, PLANE, texStone, texStoneNormal };
-    objects[3] = RenderObject{ {15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
-    objects[4] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_RIGHT, PLANE, texStone, texStoneNormal };
-    objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667f}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
+    objects[2] = RenderObject{ {-15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {6.0f, 1.0f}, V3_ZERO, PLANE, texStone, texStoneNormal, texStoneHeight };
+    objects[3] = RenderObject{ {15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {6.0f, 1.0f}, {0.0f, 180.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
+    objects[4] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {6.0f, 1.0f}, {0.0f, 90.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
+    objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {6.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
     
     // Inside Walls
-    objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD, PLANE, texStone, texStoneNormal };
-    objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
-    objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT, PLANE, texStone, texStoneNormal };
-    objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
+    objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_ZERO, PLANE, texStone, texStoneNormal, texStoneHeight };
+    objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, {0.0f, 180.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
+    objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, {0.0f, 90.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
+    objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, {0.0f, -90.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
     
     // Items
-    objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD,"./assets/meshes/horse.obj", horseTex, horseNormal };
-    objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD,"./assets/meshes/elephant.obj", elephantTex, elephantNormal };
-    objects[12] = RenderObject{ {-6.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
+    objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_ZERO,"./assets/meshes/horse.obj", horseTex, horseNormal };
+    objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V2_ONE, V3_ZERO,"./assets/meshes/elephant.obj", elephantTex, elephantNormal };
+    
+    // Torches
+    objects[12] = RenderObject{ {-5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, V2_ONE, {0.0f, 180.0f, 0.0f}, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
+    objects[13] = RenderObject{ {5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, V2_ONE, {0.0f, 0.0f, 0.0f}, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
+    objects[14] = RenderObject{ {0.0f, 3.0f, 5.5f}, V3_ONE * 5.0f, V2_ONE, {0.0f, -90.0f, 0.0f}, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
+    objects[15] = RenderObject{ {0.0f, 3.0f, -5.5f}, V3_ONE * 5.0f, V2_ONE, {0.0f, 90.0f, 0.0f}, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
 
 
-    lights.resize(20);
-    lights[0] = Light{ objects[0].position, V3_ONE, POINT_LIGHT};
-    lights[0].radius = 1.0f;
+    lights.resize(40);
+    lights[0] = Light{ {-10.0f, 2.5f, 0.0f}, V3_ONE, POINT_LIGHT};
+    lights[0].radius = 2.0f;
     lights[0].intensity = 2.0f;
 
-    //  lights[1] = Light{ {0.0, 2.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, POINT_LIGHT };
-    //  lights[1].intensity = 2.0f;
-    //  lights[1].specularScale = 2.0f;
-    //  lights[1].radius = 5.0f;
+    lights[1] = Light{ {0.0, 2.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, POINT_LIGHT };
+    lights[1].intensity = 1.0f;
+    lights[1].specularScale = 32.0f;
+    lights[1].radius = 1.0f;
 
-    lights[2] = Light();
-    lights[2].color = { 1.0f, 0.0f, 0.0f };
+    //  lights[2] = Light();
+    //  lights[2].color = { 1.0f, 0.0f, 0.0f };
 
-    //lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 20, 10 };
+    lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 20, 15 };
 
-    lights[4] = objects[12].lights[0];
-    lights[5] = objects[12].lights[1];
-    lights[6] = objects[12].lights[2];
-    lights[7] = objects[12].lights[3];
     objects[12].lightIndex = 4;
+    objects[13].lightIndex = 8;
+    objects[14].lightIndex = 12;
+    objects[15].lightIndex = 16;
+    
+    for (int i = 0; i < 4; i++)
+    {
+        lights[objects[12].lightIndex + i] = objects[12].lights[i];
+        lights[objects[13].lightIndex + i] = objects[13].lights[i];
+        lights[objects[14].lightIndex + i] = objects[14].lights[i];
+        lights[objects[15].lightIndex + i] = objects[15].lights[i];
+    }
 
 
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
+    float heightScale = 0.1f;
 
 
     glEnable(GL_DEPTH_TEST);
@@ -376,6 +391,7 @@ int main(void)
         
         glUniform1f(u_ambientFactor, ambientFactor);
         glUniform1f(u_diffuseFactor, diffuseFactor);
+        glUniform1f(glGetUniformLocation(shaderProgram, "u_heightScale"), heightScale);
         glUniform1i(u_normalToggle, normalToggle);
 
 
@@ -384,32 +400,38 @@ int main(void)
         glUseProgram(shaderPhong);
         mvp = world * view * proj;
 
-        objects[10].facing = Rotate(objects[10].facing, V3_UP, DEG2RAD * 0.1);
+        //objects[10].facing = Rotate(objects[10].facing, V3_UP, DEG2RAD * 0.1);
 
         for (int i = 0; i < objects.size(); i++)
         {
             if (objects[i].texture != NULL)
             {
                 world = Scale(objects[i].scale) * // Rotation, because it doensn't like 180
-                    (objects[i].facing == V3_FORWARD * -1.0f ? RotateY(180 * DEG2RAD) : ToMatrix(FromTo(V3_FORWARD, Normalize(objects[i].facing)))) * 
+                    RotateXYZ(objects[i].rotationVec * DEG2RAD) *
                     Translate(objects[i].position);
                 mvp = world * view * proj;
                 objects[i].Render(shaderPhong, &mvp, &world);
                 objects[i].Emit();
+
+                if (objects[i].shouldEmit)
+                {
+                    for (int k = 0; k < 4; k++)
+                    {
+                        lights[k + objects[i].lightIndex] = objects[i].lights[k];
+                    }
+                }
             }
         }
 
         // Lights
 
-        //  lights[0].position = Multiply(lights[0].position, RotateZ(sin(dt * 15)));
+        lights[0].position = Multiply(lights[0].position, RotateY(sin(dt * 3)));
         //  lights[0].direction = CalcFacingVector3(Vector3{ 0 }, lights[0].position);
         //lights[0].position = objects[0].position;
         lights[2].position = objects[0].GetCenteredPosition();
+        lights[3].position = camPos;
+        lights[3].direction = frontView * -1.0f;
 
-        for (int i = 0; i < 4; i++)
-        {
-            lights[i + objects[12].lightIndex] = objects[12].lights[i];
-        }
 
         for (int i = 0; i < lights.size(); i++)
         {
@@ -444,9 +466,9 @@ int main(void)
             ImGui::SliderInt("Light Type", &lights[0].type, 0, 2);
             ImGui::NewLine();
 
-            ImGui::SliderFloat3("Wall Position", &objects[0].position.x, -10.0f, 10.0f);
-            ImGui::SliderFloat3("Wall Direction", &objects[0].facing.x, -1.0f, 1.0f);
-            ImGui::SliderFloat3("Wall Scale", &objects[0].scale.x, -10.0f, 10.0f);
+            ImGui::SliderFloat3("Object Position",  &objects[12].position.x, -15.0f, 15.0f);
+            ImGui::SliderFloat3("Object Rotation", &objects[12].rotationVec.x, -180.0f, 180.0f);
+            ImGui::SliderFloat3("Object Scale",     &objects[12].scale.x, -10.0f, 10.0f);
             ImGui::NewLine();
 
             ImGui::SliderFloat("Plane Rotation X", &planeRotationX, 0.0f, 360.0f);
@@ -456,6 +478,7 @@ int main(void)
 
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
+            ImGui::SliderFloat("HeightScale", &heightScale, -0.25f, 0.25f);
             ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle);
 
             ImGui::SliderFloat("Near", &near, 0.0f, 10.0f);
@@ -648,7 +671,7 @@ Vector3 CalcFacingVector3(const Vector3 target, const Vector3 source)
     return Normalize(Subtract(target, source));
 }
 
-void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha)
+void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha, bool singleChannel)
 {
     int texWidth = 0;
     int texHeight = 0;
@@ -666,6 +689,8 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     if(hasAlpha)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    else if(singleChannel)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, texWidth, texHeight, 0, GL_ALPHA, GL_UNSIGNED_BYTE, pixels);
     else
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
     stbi_image_free(pixels);

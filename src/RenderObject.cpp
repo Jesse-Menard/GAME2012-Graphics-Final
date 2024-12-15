@@ -10,31 +10,32 @@ RenderObject::RenderObject(ShapeType shape)
 	CreateMesh(&mesh, shape);
 }
 
-RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 facing, const char* obj_path, GLuint texture = NULL, GLuint normalMap = NULL)
+RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 rotation, const char* obj_path, GLuint texture = NULL, GLuint normalMap = NULL)
 {
 	this->position = pos;// -scale / 2;
 	this->scale = scale;
-	this->facing = facing;
+	this->rotationVec = rotation;
 	this->texture = texture;
 	this->normalMap = normalMap;
 	CreateMesh(&mesh, obj_path, texScale);
 }
 
-RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 facing, ShapeType shape, GLuint texture = NULL, GLuint normalMap = NULL)
+RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 rotation, ShapeType shape, GLuint texture = NULL, GLuint normalMap = NULL, GLuint heightMap = NULL)
 {
 	this->position = pos;// -scale / 2;
 	this->scale = scale;
-	this->facing = facing;
+	this->rotationVec = rotation;
 	this->texture = texture;
 	this->normalMap = normalMap;
+	this->heightMap = heightMap;
 	CreateMesh(&mesh, shape, texScale);
 }
 
-RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 facing, const char* obj_path, GLuint texture, GLuint normalMap, bool shouldEmit)
+RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 rotation, const char* obj_path, GLuint texture, GLuint normalMap, bool shouldEmit)
 {
 	this->position = pos;// -scale / 2;
 	this->scale = scale;
-	this->facing = facing;
+	this->rotationVec = rotation;
 	this->texture = texture;
 	this->normalMap = normalMap;
 	this->shouldEmit = shouldEmit;
@@ -77,6 +78,13 @@ void RenderObject::Render(GLint program, Matrix *mvp, Matrix *world)
 		glBindTexture(GL_TEXTURE_2D, specMap);
 	}
 
+	if(heightMap != NULL)
+	{
+		glUniform1i(glGetUniformLocation(program, "u_depthMap"), 3);
+		glActiveTexture(GL_TEXTURE0 + 3);
+		glBindTexture(GL_TEXTURE_2D, heightMap);
+	}
+
 	DrawMesh(mesh);
 }
 
@@ -90,8 +98,9 @@ void RenderObject::InitializeLights()
 	for (int i = 0; i < 4; i++)
 	{
 		lights[i] = Light{ position + Vector3{0.0f, i * 0.25f, 0.0f}, {1.0f, 0.40f + i * 0.125f, 0.0f}, POINT_LIGHT, V3_UP };
-		lights[i].intensity = 1.2f;
-		lights[i].radius = 0.3f;
+		lights[i].intensity = 1.0f;
+		lights[i].radius = 0.4f;
+		lights[i].specularScale = 32.0f;
 	}
 }
 
