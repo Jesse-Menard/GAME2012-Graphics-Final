@@ -22,4 +22,5 @@ public:
 	GLuint specMap = NULL;
 
 	void Render(GLint program, Matrix* mvp, Matrix* world);
+	Vector3 GetCenteredPosition();
 };

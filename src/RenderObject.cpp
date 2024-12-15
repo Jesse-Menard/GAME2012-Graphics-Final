@@ -12,7 +12,7 @@ RenderObject::RenderObject(ShapeType shape)
 
 RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 facing, const char* obj_path, GLuint texture, GLuint normalMap = NULL)
 {
-	position = pos;
+	this->position = pos;// -scale / 2;
 	this->scale = scale;
 	this->facing = facing;
 	this->texture = texture;
@@ -22,7 +22,7 @@ RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3
 
 RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 facing, ShapeType shape, GLuint texture, GLuint normalMap = NULL)
 {
-	position = pos;
+	this->position = pos;// -scale / 2;
 	this->scale = scale;
 	this->facing = facing;
 	this->texture = texture;
@@ -57,4 +57,9 @@ void RenderObject::Render(GLint program, Matrix *mvp, Matrix *world)
 	}
 
 	DrawMesh(mesh);
+}
+
+Vector3 RenderObject::GetCenteredPosition()
+{
+	return position - scale / 2; // :/
 }
