@@ -40,7 +40,8 @@ RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3
 	this->shouldEmit = shouldEmit;
 
 	if (shouldEmit)
-		light = Light{ position, {0.8f, 0.8f, 0.0f}, POINT_LIGHT };
+		InitializeLights();
+
 	CreateMesh(&mesh, obj_path, texScale);
 }
 
@@ -84,12 +85,40 @@ Vector3 RenderObject::GetCenteredPosition()
 	return position - scale / 2; // :/
 }
 
+void RenderObject::InitializeLights()
+{
+	for (int i = 0; i < 4; i++)
+	{
+		lights[i] = Light{ position + Vector3{0.0f, i * 0.25f, 0.0f}, {1.0f, 0.40f + i * 0.125f, 0.0f}, POINT_LIGHT, V3_UP };
+		lights[i].intensity = 1.2f;
+		lights[i].radius = 0.3f;
+	}
+}
+
 void RenderObject::Emit()
 {
 	if (shouldEmit)
 	{
-		light.position.y += 0.1f;
-		if (light.position.y > position.y + 10)
-			light.position = position;
+		float posRange = 1;
+		float posInc = 0.05f;
+		float colorRange = 0.5f;
+		float colorInc = (posInc / posRange) * colorRange;
+
+		for (int i = 0; i < 4; i++)
+		{
+			lights[i].position += lights[i].direction * posInc;
+			if (lights[i].position.y > position.y + 0.80)
+			{
+				lights[i].color -= posInc / posRange * 0.2f * 5;
+			}
+			lights[i].color.y += colorInc;
+
+			if (lights[i].position.y > position.y + posRange)
+			{
+				lights[i].position = position;
+				lights[i].color = { 1.0f, 0.30f, 0.0f };
+				lights[i].direction = Normalize(Vector3{ Random(-0.3f, 0.3f), 1.0f, Random(-0.3f, 0.3f)});
+			}
+		}
 	}
 }

@@ -168,7 +168,7 @@ int main(void)
     // Items
     objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD,"./assets/meshes/horse.obj", horseTex, horseNormal };
     objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD,"./assets/meshes/elephant.obj", elephantTex, elephantNormal };
-    objects[12] = RenderObject{ {-1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
+    objects[12] = RenderObject{ {-6.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
 
 
     lights.resize(20);
@@ -176,17 +176,22 @@ int main(void)
     lights[0].radius = 1.0f;
     lights[0].intensity = 2.0f;
 
-    lights[1] = Light{ {0.0, 2.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, POINT_LIGHT };
-    lights[1].intensity = 2.0f;
-    lights[1].specularScale = 2.0f;
-    lights[1].radius = 5.0f;
+    //  lights[1] = Light{ {0.0, 2.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, POINT_LIGHT };
+    //  lights[1].intensity = 2.0f;
+    //  lights[1].specularScale = 2.0f;
+    //  lights[1].radius = 5.0f;
 
     lights[2] = Light();
     lights[2].color = { 1.0f, 0.0f, 0.0f };
 
-    lights[3] = objects[13].light;
+    //lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 20, 10 };
 
-    lights[4] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 20, 10 };
+    lights[4] = objects[12].lights[0];
+    lights[5] = objects[12].lights[1];
+    lights[6] = objects[12].lights[2];
+    lights[7] = objects[12].lights[3];
+    objects[12].lightIndex = 4;
+
 
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
@@ -401,7 +406,10 @@ int main(void)
         //lights[0].position = objects[0].position;
         lights[2].position = objects[0].GetCenteredPosition();
 
-        lights[3] = objects[12].light;
+        for (int i = 0; i < 4; i++)
+        {
+            lights[i + objects[12].lightIndex] = objects[12].lights[i];
+        }
 
         for (int i = 0; i < lights.size(); i++)
         {

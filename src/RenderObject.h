@@ -23,10 +23,12 @@ public:
 	GLuint normalMap = NULL;
 	GLuint specMap = NULL;
 
-	Light light;
+	Light lights[4];
 	bool shouldEmit = false;
+	int lightIndex = NULL;
 
 	void Render(GLint program, Matrix* mvp, Matrix* world);
 	Vector3 GetCenteredPosition();
+	void InitializeLights();
 	void Emit();
 };
