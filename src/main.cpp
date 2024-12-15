@@ -39,9 +39,30 @@ void Print(Matrix m);
 
 Vector3 CalcFacingVector3(const Vector3 target, const Vector3 source);
 void LoadTexture(GLuint* texture, const char* filename, bool hasAlpha = false, bool singleChannel = false);
+void PickupAction();
+void HoldItems();
 
+struct Item
+{
+    RenderObject* object;
+    bool pickedUp;
+};
+
+Item items[4];
 std::vector<Light> lights;
 std::vector<RenderObject> objects;
+
+Vector3 frontView = V3_FORWARD;
+Vector3 camPos{ 0.0f, 2.0f, 3.0f };
+
+Vector3 camX;
+Vector3 camY;
+Vector3 camZ;
+Matrix camRotation;
+Matrix view;
+
+float camPitch = 0;
+float camYaw = 0;
 
 int main(void)
 {
@@ -123,7 +144,6 @@ int main(void)
     GLuint sconceNormal = GL_NONE;
     LoadTexture(&sconceNormal, "./assets/textures/sconceNormal.png");
 
-    Vector3 camPos{ 0.0f, 2.0f, 3.0f };
     float fov = 75.0f * DEG2RAD;
     float left = -1.0f;
     float right = 1.0f;
@@ -131,10 +151,7 @@ int main(void)
     float bottom = -1.0f;
     float near = 0.001f;
     float far = 50.0f;
-    float camPitch = 0;
-    float camYaw = 0;
     float panScale = 0.25f;
-    Vector3 frontView = V3_FORWARD;
     float planeRotationX = 0;
     float planeRotationY = 0;
     float planeRotationZ = 0;
@@ -176,6 +193,8 @@ int main(void)
     objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f},   V3_ONE * 5.0f, V3_ZERO, &horseMesh,    horseTex,    horseNormal,    false };
     objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V3_ZERO, &elephantMesh, elephantTex, elephantNormal, false };
     
+    items[0].object = &objects[10];
+
     // Torches
     objects[12] = RenderObject{ {-5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
     objects[13] = RenderObject{ {5.5f, 3.0f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
@@ -284,6 +303,9 @@ int main(void)
             if (IsKeyPressed(GLFW_KEY_L))
                 showLights = !showLights;
 
+            if (IsKeyPressed(GLFW_KEY_P))
+                PickupAction();
+
             if (IsKeyPressed(GLFW_KEY_N))
                 normalToggle = !normalToggle; // I know what I'm doing intellisense, go away >:(
 
@@ -303,11 +325,11 @@ int main(void)
             }
 
             camYaw -= mouseDelta.x * panScale;
-            Matrix camRotation = ToMatrix(FromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
+            camRotation = ToMatrix(FromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
 
-            Vector3 camX = { camRotation.m0, camRotation.m1, camRotation.m2 };
-            Vector3 camY = { camRotation.m4, camRotation.m5, camRotation.m6 };
-            Vector3 camZ = { camRotation.m8, camRotation.m9, camRotation.m10 };
+            camX = { camRotation.m0, camRotation.m1, camRotation.m2 };
+            camY = { camRotation.m4, camRotation.m5, camRotation.m6 };
+            camZ = { camRotation.m8, camRotation.m9, camRotation.m10 };
 
             frontView = Multiply(V3_FORWARD, camRotation);
 
@@ -355,7 +377,7 @@ int main(void)
 
         Matrix normal = MatrixIdentity();
         Matrix world = MatrixIdentity();
-        Matrix view = LookAt(camPos, camPos - frontView, V3_UP);
+        view = LookAt(camPos, camPos - frontView, V3_UP);
         Matrix proj = Perspective(fov, SCREEN_ASPECT, near, far);
         Matrix mvp = MatrixIdentity();
 
@@ -403,6 +425,8 @@ int main(void)
         glUniform1f(glGetUniformLocation(shaderProgram, "u_heightScale"), heightScale);
         glUniform1i(u_normalToggle, normalToggle);
 
+
+        HoldItems();
 
         // Objects
 
@@ -464,7 +488,9 @@ int main(void)
             ImGui::ShowDemoWindow();
         else
         {
-            ImGui::SliderFloat3("Camera Position", &camPos.x, -10.0f, 10.0f);
+            ImGui::SliderFloat3("Camera Position", &camPos.x, -15.0f, 15.0f);
+            ImGui::SliderFloat3("Front View", &frontView.x, -1.0f, 1.0f);
+            ImGui::NewLine();
 
             ImGui::SliderFloat3("Light Position", &lights[0].position.x, -15.0f, 15.0f);
             ImGui::SliderFloat3("Light Direction", &lights[0].direction.x, -1.0f, 1.0f);
@@ -476,9 +502,9 @@ int main(void)
             ImGui::SliderInt("Light Type", &lights[0].type, 0, 2);
             ImGui::NewLine();
 
-            ImGui::SliderFloat3("Object Position",  &objects[12].position.x, -15.0f, 15.0f);
-            ImGui::SliderFloat3("Object Rotation", &objects[12].rotationVec.x, -180.0f, 180.0f);
-            ImGui::SliderFloat3("Object Scale",     &objects[12].scale.x, -10.0f, 10.0f);
+            ImGui::SliderFloat3("Object Position",  &objects[10].position.x, -15.0f, 15.0f);
+            ImGui::SliderFloat3("Object Rotation", &objects[10].rotationVec.x, -180.0f, 180.0f);
+            ImGui::SliderFloat3("Object Scale",     &objects[10].scale.x, -10.0f, 10.0f);
             ImGui::NewLine();
 
             ImGui::SliderFloat("Plane Rotation X", &planeRotationX, 0.0f, 360.0f);
@@ -707,4 +733,31 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha, bool sing
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
     stbi_image_free(pixels);
     pixels = nullptr;
+}
+
+void PickupAction()
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if(items[i].object != nullptr)
+        {
+            if (Distance(items[i].object->position, camPos) < 2.0f)
+            {
+                items[i].pickedUp = true;
+                // Pickup
+            }
+        }
+    }
+}
+
+void HoldItems()
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (items[i].pickedUp == true)
+        {
+            items->object->position = camPos - Multiply(Vector3{0.0f, 0.0f, 1.0f}, RotateXYZ( items->object->rotationVec * DEG2RAD));
+            items->object->rotationVec = ToEuler(FromTo(V3_FORWARD, frontView)) * RAD2DEG;            
+        }
+    }
 }
