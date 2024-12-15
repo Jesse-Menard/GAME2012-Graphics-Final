@@ -33,7 +33,7 @@ struct Light {
 	float FOV;
 	float FOVbloom;
 };
-uniform Light u_lights[40];
+uniform Light u_lights[21];
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 {
@@ -113,7 +113,7 @@ void main()
 
     vec3 lighting;
 
-    for( int i = 0; i < 40; i++)
+    for( int i = 0; i < 21; i++)
     {
         if(u_lights[i].type == 0)
             lighting += direction_light(u_lights[i].direction, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale);

@@ -12,7 +12,7 @@ void GenCube(Mesh* mesh, float width, float height, float length);
 
 void CreateTangents(Mesh* mesh, bool isPlane = false);
 
-void CreateMesh(Mesh* mesh, const char* path, Vector2 texScale)
+void CreateMesh(Mesh* mesh, const char* path)
 {
 	fastObjMesh* obj = fast_obj_read(path);
 	int count = obj->index_count;
@@ -48,7 +48,7 @@ void CreateMesh(Mesh* mesh, const char* path, Vector2 texScale)
 			// Using the obj file's indices, populate the mesh->tcoords with the object's vertex texture coordinates
 			fastObjIndex idx = obj->indices[i];
 			Vector2 tcoord = ((Vector2*)obj->texcoords)[idx.t];
-			mesh->tcoords[i] = tcoord * texScale;
+			mesh->tcoords[i] = tcoord;
 		}
 	}
 	else

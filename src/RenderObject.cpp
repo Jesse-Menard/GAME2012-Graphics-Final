@@ -1,26 +1,11 @@
 #include "RenderObject.h"
 
-RenderObject::RenderObject(const char* obj_path)
+RenderObject::RenderObject(Mesh* mesh)
 {
-	CreateMesh(&mesh, obj_path);
+	this->mesh = mesh;
 }
 
-RenderObject::RenderObject(ShapeType shape)
-{
-	CreateMesh(&mesh, shape);
-}
-
-RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 rotation, const char* obj_path, GLuint texture = NULL, GLuint normalMap = NULL)
-{
-	this->position = pos;// -scale / 2;
-	this->scale = scale;
-	this->rotationVec = rotation;
-	this->texture = texture;
-	this->normalMap = normalMap;
-	CreateMesh(&mesh, obj_path, texScale);
-}
-
-RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 rotation, ShapeType shape, GLuint texture = NULL, GLuint normalMap = NULL, GLuint heightMap = NULL)
+RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector3 rotation, Mesh* mesh, GLuint texture = NULL, GLuint normalMap = NULL, GLuint heightMap = NULL, bool shouldEmit = false)
 {
 	this->position = pos;// -scale / 2;
 	this->scale = scale;
@@ -28,10 +13,10 @@ RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3
 	this->texture = texture;
 	this->normalMap = normalMap;
 	this->heightMap = heightMap;
-	CreateMesh(&mesh, shape, texScale);
+	this->mesh = mesh;
 }
 
-RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3 rotation, const char* obj_path, GLuint texture, GLuint normalMap, bool shouldEmit)
+RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector3 rotation, Mesh* mesh, GLuint texture, GLuint normalMap, bool shouldEmit = false)
 {
 	this->position = pos;// -scale / 2;
 	this->scale = scale;
@@ -39,11 +24,10 @@ RenderObject::RenderObject(Vector3 pos, Vector3 scale, Vector2 texScale, Vector3
 	this->texture = texture;
 	this->normalMap = normalMap;
 	this->shouldEmit = shouldEmit;
+	this->mesh = mesh;	
 
 	if (shouldEmit)
 		InitializeLights();
-
-	CreateMesh(&mesh, obj_path, texScale);
 }
 
 RenderObject::~RenderObject()
@@ -85,7 +69,7 @@ void RenderObject::Render(GLint program, Matrix *mvp, Matrix *world)
 		glBindTexture(GL_TEXTURE_2D, heightMap);
 	}
 
-	DrawMesh(mesh);
+	DrawMesh(*mesh);
 }
 
 Vector3 RenderObject::GetCenteredPosition()
@@ -95,9 +79,9 @@ Vector3 RenderObject::GetCenteredPosition()
 
 void RenderObject::InitializeLights()
 {
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < lightAmount; i++)
 	{
-		lights[i] = Light{ position + Vector3{0.0f, i * 0.25f, 0.0f}, {1.0f, 0.40f + i * 0.125f, 0.0f}, POINT_LIGHT, V3_UP };
+		lights[i] = Light{ position + Vector3{0.0f, i * (1.5f / lightAmount), 0.0f}, {1.0f, 0.40f + i * (0.5f / lightAmount), 0.0f}, POINT_LIGHT, V3_UP };
 		lights[i].intensity = 1.0f;
 		lights[i].radius = 0.4f;
 		lights[i].specularScale = 32.0f;
@@ -108,25 +92,30 @@ void RenderObject::Emit()
 {
 	if (shouldEmit)
 	{
-		float posRange = 1;
-		float posInc = 0.05f;
+		float posRange = 1.5f;
+		float posInc = 0.1f;
 		float colorRange = 0.5f;
 		float colorInc = (posInc / posRange) * colorRange;
+		int flickerAmount = 4;
 
-		for (int i = 0; i < 4; i++)
+		// Updates 'flames' position & colour to try and mimic flame
+		for (int i = 0; i < lightAmount; i++)
 		{
 			lights[i].position += lights[i].direction * posInc;
-			if (lights[i].position.y > position.y + 0.80)
+			if (lights[i].position.y > position.y + posRange * 3 / 5)
 			{
-				lights[i].color -= posInc / posRange * 0.2f * 5;
+				lights[i].color -=  5 * (posInc / posRange) / 2;
 			}
 			lights[i].color.y += colorInc;
-
+			for (int k = 0; k < flickerAmount; k++)
+			{
+				if (lights[i].position.y - position.y >= (posRange/ flickerAmount * k) - posInc && lights[i].position.y - position.y <= (posRange / flickerAmount * k) + posInc)
+					lights[i].direction = Normalize(Vector3{ Random(-0.6f, 0.6f), 1.0f, Random(-0.6f, 0.6f) });
+			}
 			if (lights[i].position.y > position.y + posRange)
 			{
 				lights[i].position = position;
 				lights[i].color = { 1.0f, 0.30f, 0.0f };
-				lights[i].direction = Normalize(Vector3{ Random(-0.3f, 0.3f), 1.0f, Random(-0.3f, 0.3f)});
 			}
 		}
 	}

@@ -35,7 +35,7 @@ struct Mesh
 	GLuint btgbo = GL_NONE;	// bitangent buffer object (indices)
 };
 
-void CreateMesh(Mesh* mesh, const char* path, Vector2 texScale = V2_ONE);
+void CreateMesh(Mesh* mesh, const char* path);
 void CreateMesh(Mesh* mesh, ShapeType shape, Vector2 texScale = V2_ONE);
 void DestroyMesh(Mesh* mesh);
 

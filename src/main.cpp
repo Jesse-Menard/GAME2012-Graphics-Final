@@ -142,43 +142,48 @@ int main(void)
     // Whether we render the imgui demo widgets
     bool imguiDemo = false;
     bool camToggle = true;
+    bool showLights = true;
     int normalToggle = false;
 
     // ENABLE BACKFACE CULLING
     glEnable(GL_CULL_FACE);
 
-    Mesh sphereMesh;// , horse;
+    Mesh sphereMesh, insidePlaneMesh, outsidePlaneMesh, horseMesh, elephantMesh, sconceMesh;// , horse;
     CreateMesh(&sphereMesh, SPHERE);
-    //CreateMesh(&horse, "./assets/meshes/horse.obj");
+    CreateMesh(&insidePlaneMesh, PLANE);
+    CreateMesh(&outsidePlaneMesh, PLANE, {6.0f, 1.0f});
+    CreateMesh(&horseMesh, "./assets/meshes/horse.obj");
+    CreateMesh(&elephantMesh, "./assets/meshes/elephant.obj");
+    CreateMesh(&sconceMesh, "./assets/meshes/sconce.obj");
 
     objects.resize(20); // positions from bottom corner of obj, will center if have time (doubt, heh) 
-    objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 30.0f, 1.0f}, V2_ONE, {-90.0f,0.0f,0.0f}, PLANE, floorTex, floorNormal, NULL};
-    objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, V2_ONE, {90.0f, 0.0f, 0.0f}, PLANE, floorTex, floorNormal, NULL};
+    objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f},  {30.0f, 30.0f, 1.0f}, {-90.0f,0.0f,0.0f},  &insidePlaneMesh, floorTex, floorNormal, NULL, false};
+    objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, {90.0f, 0.0f, 0.0f}, &insidePlaneMesh, floorTex, floorNormal, NULL, false};
     
     // Outside Walls
-    objects[2] = RenderObject{ {-15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {6.0f, 1.0f}, V3_ZERO, PLANE, texStone, texStoneNormal, texStoneHeight };
-    objects[3] = RenderObject{ {15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {6.0f, 1.0f}, {0.0f, 180.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
-    objects[4] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {6.0f, 1.0f}, {0.0f, 90.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
-    objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {6.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
+    objects[2] = RenderObject{ {-15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, V3_ZERO,              &outsidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
+    objects[3] = RenderObject{ {15.0f, 0.0f, 15.0f},   {30.0f, 5.0f, 1.0f}, {0.0f, 180.0f, 0.0f}, &outsidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
+    objects[4] = RenderObject{ {-15.0f, 0.0f, 15.0f},  {30.0f, 5.0f, 1.0f}, {0.0f, 90.0f, 0.0f},  &outsidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
+    objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f},  {30.0f, 5.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, &outsidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
     
     // Inside Walls
-    objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_ZERO, PLANE, texStone, texStoneNormal, texStoneHeight };
-    objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, {0.0f, 180.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
-    objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, {0.0f, 90.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
-    objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, {0.0f, -90.0f, 0.0f}, PLANE, texStone, texStoneNormal, texStoneHeight };
+    objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f},  {10.0f, 5.0f, 1.0f}, V3_ZERO,              &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
+    objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f},  {10.0f, 5.0f, 1.0f}, {0.0f, 180.0f, 0.0f}, &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
+    objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f},   {10.0f, 5.0f, 1.0f}, {0.0f, 90.0f, 0.0f},  &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
+    objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
     
     // Items
-    objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_ZERO,"./assets/meshes/horse.obj", horseTex, horseNormal };
-    objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V2_ONE, V3_ZERO,"./assets/meshes/elephant.obj", elephantTex, elephantNormal };
+    objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f},   V3_ONE * 5.0f, V3_ZERO, &horseMesh,    horseTex,    horseNormal,    false };
+    objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V3_ZERO, &elephantMesh, elephantTex, elephantNormal, false };
     
     // Torches
-    objects[12] = RenderObject{ {-5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, V2_ONE, {0.0f, 180.0f, 0.0f}, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
-    objects[13] = RenderObject{ {5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, V2_ONE, {0.0f, 0.0f, 0.0f}, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
-    objects[14] = RenderObject{ {0.0f, 3.0f, 5.5f}, V3_ONE * 5.0f, V2_ONE, {0.0f, -90.0f, 0.0f}, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
-    objects[15] = RenderObject{ {0.0f, 3.0f, -5.5f}, V3_ONE * 5.0f, V2_ONE, {0.0f, 90.0f, 0.0f}, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
+    objects[12] = RenderObject{ {-5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
+    objects[13] = RenderObject{ {5.5f, 3.0f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
+    objects[14] = RenderObject{ {0.0f, 3.0f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
+    objects[15] = RenderObject{ {0.0f, 3.0f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
 
 
-    lights.resize(40);
+    lights.resize(21);
     lights[0] = Light{ {-10.0f, 2.5f, 0.0f}, V3_ONE, POINT_LIGHT};
     lights[0].radius = 2.0f;
     lights[0].intensity = 2.0f;
@@ -192,13 +197,14 @@ int main(void)
     //  lights[2].color = { 1.0f, 0.0f, 0.0f };
 
     lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 20, 15 };
+    lights[3].intensity = 0.6f;
 
     objects[12].lightIndex = 4;
-    objects[13].lightIndex = 8;
-    objects[14].lightIndex = 12;
-    objects[15].lightIndex = 16;
+    objects[13].lightIndex = objects[12].lightIndex + 1 * RenderObject::lightAmount;
+    objects[14].lightIndex = objects[12].lightIndex + 2 * RenderObject::lightAmount;
+    objects[15].lightIndex = objects[12].lightIndex + 3 * RenderObject::lightAmount;
     
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < objects[12].lightAmount; i++)
     {
         lights[objects[12].lightIndex + i] = objects[12].lights[i];
         lights[objects[13].lightIndex + i] = objects[13].lights[i];
@@ -209,7 +215,7 @@ int main(void)
 
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
-    float heightScale = 0.1f;
+    float heightScale = 0.025f;
 
 
     glEnable(GL_DEPTH_TEST);
@@ -274,6 +280,9 @@ int main(void)
 
             if (IsKeyPressed(GLFW_KEY_C))
                 camToggle = !camToggle;
+
+            if (IsKeyPressed(GLFW_KEY_L))
+                showLights = !showLights;
 
             if (IsKeyPressed(GLFW_KEY_N))
                 normalToggle = !normalToggle; // I know what I'm doing intellisense, go away >:(
@@ -415,7 +424,7 @@ int main(void)
 
                 if (objects[i].shouldEmit)
                 {
-                    for (int k = 0; k < 4; k++)
+                    for (int k = 0; k < objects[i].lightAmount; k++)
                     {
                         lights[k + objects[i].lightIndex] = objects[i].lights[k];
                     }
@@ -440,7 +449,8 @@ int main(void)
             world = Scale(V3_ONE * lights[i].radius) * Translate(lights[i].position);
             mvp = world * view * proj;
 
-            lights[i].DrawLight(shaderUniformColor, &mvp, sphereMesh);
+            if(showLights)
+                lights[i].DrawLight(shaderUniformColor, &mvp, sphereMesh);
         }
 
         // ------------------------------------------------------------------------------------------
@@ -479,7 +489,9 @@ int main(void)
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("HeightScale", &heightScale, -0.25f, 0.25f);
-            ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle);
+            ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle); ImGui::SameLine();
+            ImGui::Checkbox("Show Lights", &showLights);
+
 
             ImGui::SliderFloat("Near", &near, 0.0f, 10.0f);
             ImGui::SliderFloat("Far", &far,0.0f, 100.0f);
