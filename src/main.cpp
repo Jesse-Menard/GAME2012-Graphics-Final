@@ -106,6 +106,16 @@ int main(void)
     GLuint floorNormal = GL_NONE;
     LoadTexture(&floorNormal, "./assets/textures/FloorNormal.jpg");
 
+    GLuint horseTex = GL_NONE;
+    LoadTexture(&horseTex, "./assets/textures/horse.png");
+    GLuint horseNormal = GL_NONE;
+    LoadTexture(&horseNormal, "./assets/textures/horseNormal.jpg");
+
+    GLuint elephantTex = GL_NONE;
+    LoadTexture(&elephantTex, "./assets/textures/elephant.jpg");
+    GLuint elephantNormal = GL_NONE;
+    LoadTexture(&elephantNormal, "./assets/textures/elephantNormal.jpg");
+
     Vector3 camPos{ 0.0f, 2.0f, 3.0f };
     float fov = 75.0f * DEG2RAD;
     float left = -1.0f;
@@ -130,24 +140,31 @@ int main(void)
     // ENABLE BACKFACE CULLING
     glEnable(GL_CULL_FACE);
 
-    objects.resize(20); // positions from bottom corner of obj, will center if have time (doubt, heh) 
-    objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 30.0f, 1.0f}, V2_ONE, V3_UP, PLANE, floorTex, floorNormal };
-    objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, V2_ONE, {0.0f, -1.0f, 0.0f}, PLANE, floorTex, floorNormal};
-
-    // Outside Walls
-    objects[2] = RenderObject{ {-15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD, PLANE, texStone, texStoneNormal };
-    objects[3] = RenderObject{ {15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
-    objects[4] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_RIGHT, PLANE, texStone, texStoneNormal };
-    objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667f}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
-
-    // Inside Walls
-    objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD, PLANE, texStone, texStoneNormal };
-    objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
-    objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT, PLANE, texStone, texStoneNormal };
-    objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
-
-    Mesh sphereMesh;
+    Mesh sphereMesh;// , horse;
     CreateMesh(&sphereMesh, SPHERE);
+    //CreateMesh(&horse, "./assets/meshes/horse.obj");
+
+    objects.resize(20); // positions from bottom corner of obj, will center if have time (doubt, heh) 
+    //objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 30.0f, 1.0f}, V2_ONE, V3_UP, PLANE, floorTex, floorNormal };
+    //objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, V2_ONE, {0.0f, -1.0f, 0.0f}, PLANE, floorTex, floorNormal};
+    //
+    //// Outside Walls
+    //objects[2] = RenderObject{ {-15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD, PLANE, texStone, texStoneNormal };
+    //objects[3] = RenderObject{ {15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
+    //objects[4] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_RIGHT, PLANE, texStone, texStoneNormal };
+    //objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667f}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
+    //
+    //// Inside Walls
+    //objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD, PLANE, texStone, texStoneNormal };
+    //objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
+    //objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT, PLANE, texStone, texStoneNormal };
+    //objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
+    //
+    //// Items
+    objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD,"./assets/meshes/horse.obj", horseTex, horseNormal };
+    objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD,"./assets/meshes/elephant.obj", elephantTex, elephantNormal };
+    objects[12] = RenderObject{ {-1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD, "./assets/meshes/cube.obj", floorTex, floorNormal};
+
 
     lights.resize(20);
     lights[0] = Light{ objects[0].position, V3_ONE, POINT_LIGHT};
@@ -352,6 +369,8 @@ int main(void)
 
         glUseProgram(shaderPhong);
         mvp = world * view * proj;
+
+        objects[10].facing = Rotate(objects[10].facing, V3_UP, DEG2RAD * 0.1);
 
         for (int i = 0; i < objects.size(); i++)
         {
@@ -614,7 +633,15 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha)
     int texWidth = 0;
     int texHeight = 0;
     int texChannels = 0;
-    stbi_uc* pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, 0);
+    int texWidthA = 0;
+    int texHeightA = 0;
+    int texChannelsA = 0;
+    stbi_uc* pixels;
+
+    if (hasAlpha)
+        pixels = stbi_load(filename, &texWidthA, &texHeightA, &texChannelsA, 0);
+    else
+        pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, 0);
 
     *texture = GL_NONE;
     glGenTextures(1, &*texture);
@@ -624,9 +651,9 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     if(hasAlpha)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidthA, texHeightA, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     else
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
     stbi_image_free(pixels);
     pixels = nullptr;
 }

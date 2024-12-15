@@ -320,22 +320,28 @@ void GenCube(Mesh* mesh, float width, float height, float length)
 void CreateTangents(Mesh* mesh)
 {
 	/// Math from https://learnopengl.com/Advanced-Lighting/Normal-Mapping
-	for (int i = 0; i < mesh->tangents.size(); i++)
+	for (int i = 0; i < mesh->tangents.size();)
 	{
-		// If only vectors let you access with [-1] :(
-		Vector3 edge1 = mesh->positions[i+1 >= mesh->tangents.size() ? 0 : i+1] - mesh->positions[i];
-		Vector3 edge2 = mesh->positions[i + 2 >= mesh->tangents.size() ? i + 2 > mesh->tangents.size() ? 1 : 0 : i + 2] - mesh->positions[i];
-		Vector2 deltaUV1 = mesh->tcoords[i+1 >= mesh->tangents.size() ? 0 : i + 1] - mesh->tcoords[i];
-		Vector2 deltaUV2 = mesh->tcoords[i+2 >= mesh->tangents.size() ? i+2 > mesh->tangents.size() ? 1 : 0 : i + 2] - mesh->tcoords[i];
-
+		Vector3 edge1 = mesh->positions[i + 1] - mesh->positions[i];
+		Vector3 edge2 = mesh->positions[i + 2] - mesh->positions[i];
+	
+		Vector2 deltaUV1 = mesh->tcoords[i + 1] - mesh->tcoords[i];
+		Vector2 deltaUV2 = mesh->tcoords[i + 2] - mesh->tcoords[i];
+	
 		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-
+	
 		mesh->tangents[i].x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
 		mesh->tangents[i].y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
 		mesh->tangents[i].z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-
+	
+		mesh->tangents[i + 1] = mesh->tangents[i + 2] = mesh->tangents[i];
+	
 		mesh->bitangents[i].x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
 		mesh->bitangents[i].y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
 		mesh->bitangents[i].z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+	
+		mesh->bitangents[i + 1] = mesh->bitangents[i + 2] = mesh->bitangents[i];
+		
+		i += 3;
 	}
 }

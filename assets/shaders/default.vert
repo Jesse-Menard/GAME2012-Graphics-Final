@@ -17,19 +17,32 @@ out mat3 TBN;
 
 void main()
 {
-   position = (u_world * vec4(aPosition, 1.0)).xyz;
-   normal = u_normal * aNormal;
-   tcoord = aTcoord;
+	position = (u_world * vec4(aPosition, 1.0)).xyz;
+	normal = u_normal * aNormal;
+	tcoord = aTcoord;
 
-   /// Math from https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+	/// Math from https://learnopengl.com/Advanced-Lighting/Normal-Mapping
 
-   vec3 tangent = (u_world * vec4(aTangent, 1.0)).xyz;
-   vec3 bitangent = (u_world * vec4(aBitangent, 1.0)).xyz;
+	vec3 T = normalize(vec3(u_world * vec4(aTangent, 0.0)));
+	vec3 N = normalize(vec3(u_world * vec4(aNormal, 0.0)));
+	// re-orthogonalize T with respect to N
+	T = normalize(T - dot(T, N) * N);
+	// then retrieve perpendicular vector B with the cross product of T and N
+	vec3 B = cross(N, T);
+	
+	TBN = mat3(T, B, N);  
 
-   vec3 T = normalize(vec3(u_world * vec4(tangent, 0.0)));
-   vec3 B = normalize(vec3(u_world * vec4(bitangent, 0.0)));
-   vec3 N = normalize(vec3(u_world * vec4(normal,    0.0)));
-   TBN = mat3(T, B, N);
+
+
+
+
+   //	vec3 tangent = (u_world * vec4(aTangent, 1.0)).xyz;
+   //	vec3 bitangent = (u_world * vec4(aBitangent, 1.0)).xyz;
+   //	
+   //	vec3 T = normalize(vec3(u_world * vec4(tangent, 0.0)));
+   //	vec3 B = normalize(vec3(u_world * vec4(bitangent, 0.0)));
+   //	vec3 N = normalize(vec3(u_world * vec4(normal,    0.0)));
+   //	TBN = mat3(T, B, N);
 
    gl_Position = u_mvp * vec4(aPosition, 1.0);
 }
