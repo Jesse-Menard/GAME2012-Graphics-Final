@@ -10,7 +10,7 @@ void Upload(Mesh* mesh);
 
 void GenCube(Mesh* mesh, float width, float height, float length);
 
-void CreateTangents(Mesh* mesh);
+void CreateTangents(Mesh* mesh, bool isPlane = false);
 
 void CreateMesh(Mesh* mesh, const char* path, Vector2 texScale)
 {
@@ -19,7 +19,6 @@ void CreateMesh(Mesh* mesh, const char* path, Vector2 texScale)
 	mesh->positions.resize(count);
 	mesh->normals.resize(count);
 	mesh->tangents.resize(count);
-	mesh->bitangents.resize(count);
 	std::vector<fastObjIndex> indices(obj->index_count);
 	memcpy(indices.data(), obj->indices, indices.size() * sizeof(fastObjIndex));
 	
@@ -109,7 +108,6 @@ void CreateMesh(Mesh* mesh, ShapeType shape, Vector2 texScale)
 			mesh->tcoords[i].y *= texScale.y;
 		}
 		mesh->tangents.resize(par->npoints);
-		mesh->bitangents.resize(par->npoints);
 		par_shapes_free_mesh(par);
 	}
 	else
@@ -118,7 +116,7 @@ void CreateMesh(Mesh* mesh, ShapeType shape, Vector2 texScale)
 		GenCube(mesh, 1.0f, 1.0f, 1.0f);
 	}
 
-	CreateTangents(mesh);
+	CreateTangents(mesh, shape == PLANE);
 	// 3. Upload Mesh to GPU
 	Upload(mesh);
 }
@@ -179,13 +177,6 @@ void Upload(Mesh* mesh)
 	glBufferData(GL_ARRAY_BUFFER, mesh->tangents.size() * sizeof(Vector3), mesh->tangents.data(), GL_STATIC_DRAW);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), nullptr);
 	glEnableVertexAttribArray(3);
-	
-	
-	glGenBuffers(1, &btgbo);
-	glBindBuffer(GL_ARRAY_BUFFER, btgbo);
-	glBufferData(GL_ARRAY_BUFFER, mesh->bitangents.size() * sizeof(Vector3), mesh->bitangents.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), nullptr);
-	glEnableVertexAttribArray(4);
 
 	if (!mesh->indices.empty())
 	{
@@ -317,16 +308,40 @@ void GenCube(Mesh* mesh, float width, float height, float length)
 	mesh->count = 36;
 }
 
-void CreateTangents(Mesh* mesh)
+void CreateTangents(Mesh* mesh, bool isPlane)
 {
 	/// Math from https://learnopengl.com/Advanced-Lighting/Normal-Mapping
 	for (int i = 0; i < mesh->tangents.size();)
 	{
-		Vector3 edge1 = mesh->positions[i + 1] - mesh->positions[i];
-		Vector3 edge2 = mesh->positions[i + 2] - mesh->positions[i];
-	
-		Vector2 deltaUV1 = mesh->tcoords[i + 1] - mesh->tcoords[i];
-		Vector2 deltaUV2 = mesh->tcoords[i + 2] - mesh->tcoords[i];
+		Vector3 edge1;
+		Vector3 edge2;
+		Vector2 deltaUV1;
+		Vector2 deltaUV2;
+
+		if (isPlane)
+		{
+			edge1 = mesh->positions[mesh->indices[i + 1]] - mesh->positions[mesh->indices[i]];
+			edge2 = mesh->positions[mesh->indices[i + 2]] - mesh->positions[mesh->indices[i]];
+
+			deltaUV1 = mesh->tcoords[mesh->indices[i + 1]] - mesh->tcoords[mesh->indices[i]];
+			deltaUV2 = mesh->tcoords[mesh->indices[i + 2]] - mesh->tcoords[mesh->indices[i]];
+
+			float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+			mesh->tangents[0].x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+			mesh->tangents[0].y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+			mesh->tangents[0].z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+			mesh->tangents[3] = mesh->tangents[2] = mesh->tangents[1] = mesh->tangents[0];
+
+			break;
+		}
+
+		edge1 = mesh->positions[i + 1] - mesh->positions[i];
+		edge2 = mesh->positions[i + 2] - mesh->positions[i];
+
+		deltaUV1 = mesh->tcoords[i + 1] - mesh->tcoords[i];
+		deltaUV2 = mesh->tcoords[i + 2] - mesh->tcoords[i];
 	
 		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
 	
@@ -335,13 +350,7 @@ void CreateTangents(Mesh* mesh)
 		mesh->tangents[i].z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
 	
 		mesh->tangents[i + 1] = mesh->tangents[i + 2] = mesh->tangents[i];
-	
-		mesh->bitangents[i].x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-		mesh->bitangents[i].y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-		mesh->bitangents[i].z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-	
-		mesh->bitangents[i + 1] = mesh->bitangents[i + 2] = mesh->bitangents[i];
-		
+
 		i += 3;
 	}
 }

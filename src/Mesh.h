@@ -23,7 +23,6 @@ struct Mesh
 	std::vector<Vector2> tcoords;
 	std::vector<uint16_t> indices;
 	std::vector<Vector3> tangents;
-	std::vector<Vector3> bitangents;
 	Matrix TBN = MatrixIdentity();
 
 	// GPU data

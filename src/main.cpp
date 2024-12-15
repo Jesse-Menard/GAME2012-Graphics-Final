@@ -116,6 +116,11 @@ int main(void)
     GLuint elephantNormal = GL_NONE;
     LoadTexture(&elephantNormal, "./assets/textures/elephantNormal.jpg");
 
+    GLuint sconceTex = GL_NONE;
+    LoadTexture(&sconceTex, "./assets/textures/sconce.png");
+    GLuint sconceNormal = GL_NONE;
+    LoadTexture(&sconceNormal, "./assets/textures/sconceNormal.png");
+
     Vector3 camPos{ 0.0f, 2.0f, 3.0f };
     float fov = 75.0f * DEG2RAD;
     float left = -1.0f;
@@ -145,25 +150,25 @@ int main(void)
     //CreateMesh(&horse, "./assets/meshes/horse.obj");
 
     objects.resize(20); // positions from bottom corner of obj, will center if have time (doubt, heh) 
-    //objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 30.0f, 1.0f}, V2_ONE, V3_UP, PLANE, floorTex, floorNormal };
-    //objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, V2_ONE, {0.0f, -1.0f, 0.0f}, PLANE, floorTex, floorNormal};
-    //
-    //// Outside Walls
-    //objects[2] = RenderObject{ {-15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD, PLANE, texStone, texStoneNormal };
-    //objects[3] = RenderObject{ {15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
-    //objects[4] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_RIGHT, PLANE, texStone, texStoneNormal };
-    //objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667f}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
-    //
-    //// Inside Walls
-    //objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD, PLANE, texStone, texStoneNormal };
-    //objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
-    //objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT, PLANE, texStone, texStoneNormal };
-    //objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
-    //
-    //// Items
+    objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 30.0f, 1.0f}, V2_ONE, V3_UP, PLANE, floorTex, floorNormal };
+    objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, V2_ONE, {0.0f, -1.0f, 0.0f}, PLANE, floorTex, floorNormal};
+    
+    // Outside Walls
+    objects[2] = RenderObject{ {-15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD, PLANE, texStone, texStoneNormal };
+    objects[3] = RenderObject{ {15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
+    objects[4] = RenderObject{ {-15.0f, 0.0f, 15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667}, V3_RIGHT, PLANE, texStone, texStoneNormal };
+    objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f}, {30.0f, 5.0f, 1.0f}, {1.0f, 0.166667f}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
+    
+    // Inside Walls
+    objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD, PLANE, texStone, texStoneNormal };
+    objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_FORWARD * -1.0f, PLANE, texStone, texStoneNormal };
+    objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT, PLANE, texStone, texStoneNormal };
+    objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {1.0f, 0.5}, V3_RIGHT * -1.0f, PLANE, texStone, texStoneNormal };
+    
+    // Items
     objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD,"./assets/meshes/horse.obj", horseTex, horseNormal };
     objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD,"./assets/meshes/elephant.obj", elephantTex, elephantNormal };
-    objects[12] = RenderObject{ {-1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD, "./assets/meshes/cube.obj", floorTex, floorNormal};
+    objects[12] = RenderObject{ {-1.0f, 1.0f, 1.0f}, V3_ONE * 5.0f, V2_ONE, V3_FORWARD, "./assets/meshes/sconce.obj", sconceTex, sconceNormal, true};
 
 
     lights.resize(20);
@@ -178,6 +183,10 @@ int main(void)
 
     lights[2] = Light();
     lights[2].color = { 1.0f, 0.0f, 0.0f };
+
+    lights[3] = objects[13].light;
+
+    lights[4] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 20, 10 };
 
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
@@ -381,6 +390,7 @@ int main(void)
                     Translate(objects[i].position);
                 mvp = world * view * proj;
                 objects[i].Render(shaderPhong, &mvp, &world);
+                objects[i].Emit();
             }
         }
 
@@ -390,6 +400,8 @@ int main(void)
         //  lights[0].direction = CalcFacingVector3(Vector3{ 0 }, lights[0].position);
         //lights[0].position = objects[0].position;
         lights[2].position = objects[0].GetCenteredPosition();
+
+        lights[3] = objects[12].light;
 
         for (int i = 0; i < lights.size(); i++)
         {
@@ -633,15 +645,9 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha)
     int texWidth = 0;
     int texHeight = 0;
     int texChannels = 0;
-    int texWidthA = 0;
-    int texHeightA = 0;
-    int texChannelsA = 0;
     stbi_uc* pixels;
 
-    if (hasAlpha)
-        pixels = stbi_load(filename, &texWidthA, &texHeightA, &texChannelsA, 0);
-    else
-        pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, 0);
+    pixels = stbi_load(filename, &texWidth, &texHeight, &texChannels, 0);
 
     *texture = GL_NONE;
     glGenTextures(1, &*texture);
@@ -651,7 +657,7 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     if(hasAlpha)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidthA, texHeightA, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texWidth, texHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
     else
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels);
     stbi_image_free(pixels);
