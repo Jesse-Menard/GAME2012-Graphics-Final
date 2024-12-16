@@ -97,6 +97,7 @@ void RenderObject::Emit()
 		float colorRange = 0.5f;
 		float colorInc = (posInc / posRange) * colorRange;
 		int flickerAmount = 4;
+		int tickReset = 20;
 
 		// Updates 'flames' position & colour to try and mimic flame
 		for (int i = 0; i < lightAmount; i++)
@@ -106,17 +107,18 @@ void RenderObject::Emit()
 			{
 				lights[i].color -=  5 * (posInc / posRange) / 2;
 			}
-			lights[i].color.y += colorInc;
-			for (int k = 0; k < flickerAmount; k++)
-			{
-				if (lights[i].position.y - position.y >= (posRange/ flickerAmount * k) - posInc && lights[i].position.y - position.y <= (posRange / flickerAmount * k) + posInc)
-					lights[i].direction = Normalize(Vector3{ Random(-0.6f, 0.6f), 1.0f, Random(-0.6f, 0.6f) });
-			}
-			if (lights[i].position.y > position.y + posRange)
+			else
+				lights[i].color.y += colorInc;
+
+			if (ticks % (tickReset / flickerAmount) == 0)//lights[i].position.y - position.y >= (posRange/ flickerAmount * k) - posInc && lights[i].position.y - position.y <= (posRange / flickerAmount * k) + posInc)
+				lights[i].direction = Normalize(Vector3{ Random(-0.6f, 0.6f), 1.0f, Random(-0.6f, 0.6f) });
+		
+			if (lights[i].position.y > position.y + posRange|| ticks % (tickReset* 5) == i * tickReset / lightAmount )
 			{
 				lights[i].position = position;
 				lights[i].color = { 1.0f, 0.30f, 0.0f };
 			}
 		}
+		ticks++;
 	}
 }

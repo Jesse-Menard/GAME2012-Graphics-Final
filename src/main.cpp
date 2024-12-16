@@ -60,7 +60,7 @@ std::vector<RenderObject> objects;
 RenderObject* pedestals[4];
 
 Vector3 frontView = V3_FORWARD;
-Vector3 camPos{ -11.5f, 3.0f, -11.5f };
+Vector3 camPos{ -8.0f, 3.0f, -8.0f };
 
 Vector3 camX;
 Vector3 camY;
@@ -68,9 +68,10 @@ Vector3 camZ;
 Matrix camRotation;
 Matrix view;
 
-float camPitch = 0;
-float camYaw = 0;
+float camPitch = -20;
+float camYaw = 45;
 
+bool passThroughMiddle = false;
 bool puzzleSolved = false;
 static int invSlot = 0;
 
@@ -132,41 +133,49 @@ int main(void)
     GLuint floorNormal = GL_NONE;
     LoadTexture(&floorNormal, "./assets/textures/floorNormal.jpg");
 
+    // https://polyhaven.com/a/horse_statue_01
     GLuint horseTex = GL_NONE;
     LoadTexture(&horseTex, "./assets/textures/horse.jpg");
     GLuint horseNormal = GL_NONE;
     LoadTexture(&horseNormal, "./assets/textures/horseNormal.jpg");
 
+    // https://www.fab.com/listings/6fa7eb1d-c62a-4e59-b651-dec4610eaa9b
     GLuint elephantTex = GL_NONE;
     LoadTexture(&elephantTex, "./assets/textures/elephant.jpg");
     GLuint elephantNormal = GL_NONE;
     LoadTexture(&elephantNormal, "./assets/textures/elephantNormal.jpg");
 
+    // https://www.turbosquid.com/3d-models/wall-sconce-1698414
     GLuint sconceTex = GL_NONE;
     LoadTexture(&sconceTex, "./assets/textures/sconce.jpg");
     GLuint sconceNormal = GL_NONE;
     LoadTexture(&sconceNormal, "./assets/textures/sconceNormal.jpg");
 
+    // https://www.fab.com/listings/58f4fe0d-6e74-41a8-a05f-d2f054667631
     GLuint dragonTex = GL_NONE;
     LoadTexture(&dragonTex, "./assets/textures/dragon.jpg");
     GLuint dragonNormal = GL_NONE;
     LoadTexture(&dragonNormal, "./assets/textures/dragonNormal.jpg");
 
+    // https://www.fab.com/listings/2dec82b6-55c7-40d0-9c8a-fd294f9a887b
     GLuint fishTex = GL_NONE;
     LoadTexture(&fishTex, "./assets/textures/fish.jpg");
     GLuint fishNormal = GL_NONE;
     LoadTexture(&fishNormal, "./assets/textures/fishNormal.jpg");
 
+    // https://www.fab.com/listings/4edfaf98-bbc9-4a7d-9d8a-b45f590a39be
     GLuint pillarTex = GL_NONE;
     LoadTexture(&pillarTex, "./assets/textures/pillar.jpg");
     GLuint pillarNormal = GL_NONE;
     LoadTexture(&pillarNormal, "./assets/textures/pillarNormal.jpg");
 
+    // https://www.turbosquid.com/3d-models/ornate-stone-pedestal-01-2275938
     GLuint pedestalTex = GL_NONE;
     LoadTexture(&pedestalTex, "./assets/textures/pedestal2.jpg");
     GLuint pedestalNormal = GL_NONE;
     LoadTexture(&pedestalNormal, "./assets/textures/pedestalNormal2.jpg");
 
+    // Literally straight from Guilty Gear Strive source files
     GLuint potTex = GL_NONE;
     LoadTexture(&potTex, "./assets/textures/POT_base.png", true);
 
@@ -242,7 +251,7 @@ int main(void)
     objects[15] = RenderObject{ {5.5f, 3.25f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
     objects[16] = RenderObject{ {0.0f, 3.25f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
     objects[17] = RenderObject{ {0.0f, 3.25f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
-    objects[30] = RenderObject{ {-13.9f, 3.25f, -13.9f}, V3_ONE * 5.0f, {0.0f, -45.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
+    objects[30] = RenderObject{ {-13.85f, 3.25f, -13.85f}, V3_ONE * 5.0f, {0.0f, -45.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
 
     // Pillars
 
@@ -268,7 +277,7 @@ int main(void)
     pedestals[3] = &objects[29];
 
     // Reward
-    objects[31] = RenderObject{ {0.0f, 0.5f, 0.0f}, V3_ONE * 1.5f,  {0.0f, 0.0f, 0.0f},   &potMesh, potTex, NULL, false };
+    objects[31] = RenderObject{ {0.0f, -3.2f, 0.0f}, V3_ONE * 1.2f,  {0.0f, 0.0f, 0.0f},   &potMesh, potTex, NULL, false };
     
     
     lights.resize(24);
@@ -365,14 +374,11 @@ int main(void)
             if (IsKeyPressed(GLFW_KEY_L))
                 showLights = !showLights;
 
-            //  if (IsKeyPressed(GLFW_KEY_T))
-            //      puzzleSolved = true;
+            if (IsKeyPressed(GLFW_KEY_T))
+                puzzleSolved = true;
 
             if (IsKeyPressed(GLFW_KEY_P))
                 PickupAction();
-
-            if (IsKeyPressed(GLFW_KEY_O))
-                CheckAnswer();
 
             if (IsKeyPressed(GLFW_KEY_1))
                 PlaceItem(0);
@@ -508,39 +514,78 @@ int main(void)
         /// Victory
         if (puzzleSolved)
         {
-            const float step = 1.0f / 60.0f;
-            objects[31].rotationVec.y += 6;
+            static int ticks;
+
+            const float step = 1.0f / 120.0f;
+            objects[31].rotationVec.y += 4;
             lights[0].color = { 1.0f, 1.0f, 1.0f };
-
-            if (objects[14].position.x > -14.5f)
+            if (ticks < 120)
             {
-                objects[14].position.x -= 9.0f * step;
-                objects[15].position.x += 9.0f * step;
-                objects[16].position.z += 9.0f * step;
-                objects[17].position.z -= 9.0f * step;
+                // Pedestal rumble
+                float rngRange = 0.02f;
+                pedestals[0]->position = Vector3{ Random(-14.0f - rngRange, -14.0f + rngRange), 0.0f, Random(-8.33 - rngRange, -8.33 + rngRange) };
+                pedestals[1]->position = Vector3{ Random(-14.0f - rngRange, -14.0f + rngRange), 0.0f, Random(-11.66 - rngRange, -11.66 + rngRange) };
+                pedestals[2]->position = Vector3{ Random(-11.66f - rngRange, -11.66f + rngRange), 0.0f, Random(-14.0f - rngRange, -14.0f + rngRange) };
+                pedestals[3]->position = Vector3{ Random(-8.33 - rngRange, -8.33 + rngRange), 0.0f, Random(-14.0f - rngRange, -14.0f + rngRange) };
+
+                for (int i = 0; i < 4; i++)
+                {
+                    items[i].object->position = pedestals[items[i].key]->position + Vector3{ 0.0f, 2.05f, 0.0f };
+                    items[i].object->rotationVec = pedestals[items[i].key]->rotationVec;
+                    items[i].object->scale = V3_ONE * 5.0f;
+                }
+
+                ticks++;
             }
-
-            if (objects[14].rotationVec.y < 360)
+            else if (pedestals[0]->position.y > -3.6f)
             {
-                objects[14].rotationVec.y += 180 * step;
-                objects[15].rotationVec.y += 180 * step;
-                objects[16].rotationVec.y += 180 * step;
-                objects[17].rotationVec.y += 180 * step;
+                // Pedestal retreat
+                pedestals[0]->position.y -= 3.6f * step;
+                pedestals[1]->position.y -= 3.6f * step;
+                pedestals[2]->position.y -= 3.6f * step;
+                pedestals[3]->position.y -= 3.6f * step;
+
+                items[0].object->position.y -= 3.6f * step;
+                items[1].object->position.y -= 3.6f * step;
+                items[2].object->position.y -= 3.6f * step;
+                items[3].object->position.y -= 3.6f * step;
             }
-
-            if (objects[6].position.y > -5.0f)
+            else if (objects[14].position.x > -14.5f && ticks < 180)
             {
+                // Torches
+                objects[14].position.x -= 9.0f * step / 3 * 2;
+                objects[15].position.x += 9.0f * step / 3 * 2;
+                objects[16].position.z += 9.0f * step / 3 * 2;
+                objects[17].position.z -= 9.0f * step / 3 * 2;
+
+                objects[14].rotationVec.y += 180 * step / 3 * 2;
+                objects[15].rotationVec.y += 180 * step / 3 * 2;
+                objects[16].rotationVec.y += 180 * step / 3 * 2;
+                objects[17].rotationVec.y += 180 * step / 3 * 2;
+
+                objects[30].rotationVec.y += 180 * step / 3 * 2;
+                objects[30].position.x += 8.04f * step / 3 * 2;
+                objects[30].position.z += 8.04f * step / 3 * 2;
+
+            }
+            else if (objects[6].position.y > -5.0f)
+            {
+                // Wall retreat
                 objects[6].position.y -= 5.0f * step;
                 objects[7].position.y -= 5.0f * step;
                 objects[8].position.y -= 5.0f * step;
                 objects[9].position.y -= 5.0f * step;
             }
+            else if (objects[31].position.y < 1.0f)
+            { 
+                // Ta-daaa  (biggest .obj....)
+                passThroughMiddle = true;
+                objects[31].position.y += 5.0f * step;
+            }
+            else
+                ticks++;
         }
 
-
-
-
-        //world = Translate(-0.5, -0.5, 0) * RotateX(DEG2RAD * planeRotationX) *  RotateY(DEG2RAD * planeRotationY) *  RotateZ(DEG2RAD * planeRotationY) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
 
         shaderProgram = shaderPhong;
         glUseProgram(shaderProgram);
@@ -631,6 +676,7 @@ int main(void)
             ImGui::SliderFloat3("Light Position", &lights[0].position.x, -15.0f, 15.0f);
             ImGui::SliderFloat3("Light Direction", &lights[0].direction.x, -1.0f, 1.0f);
             ImGui::SliderFloat3("Light Color", &lights[0].color.x, 0.0f, 1.0f);
+            ImGui::SliderFloat3("Torch Light Color", &lights[16].color.x, 0.0f, 1.0f);
             ImGui::SliderFloat("Light Radius", &lights[0].radius, 0.0f, 15.0f);
             ImGui::SliderFloat("Light Intensity", &lights[0].intensity, 0.0f, 20.0f);
             ImGui::SliderFloat("Light FOV", &lights[0].FOV, 0.0f, 180.0f);
@@ -879,7 +925,7 @@ void PickupAction()
     {
         if(items[i].object != nullptr )
         {
-            if (Distance(Vector2{ items[i].object->position.x, items[i].object->position.z }, Vector2{ camPos.x, camPos.z }) < 2.0f && items[i].pickedUp == false)
+            if (!puzzleSolved && Distance(Vector2{ items[i].object->position.x, items[i].object->position.z }, Vector2{ camPos.x, camPos.z }) < 2.0f && items[i].pickedUp == false)
             {
                 items[i].pickedUp = true;
                 items[i].slot = invSlot;
@@ -966,7 +1012,7 @@ void Collision()
         camPos.z = -14.5f;
 
     if (camPos.x > -5.5f && camPos.x < 5.5f &&
-        camPos.z > -5.5f && camPos.z < 5.5f && !puzzleSolved)
+        camPos.z > -5.5f && camPos.z < 5.5f && !passThroughMiddle)
     {
         if (abs(camPos.x) > abs(camPos.z))
             camPos.x = camPos.x > 0 ? 5.5f : -5.5f;

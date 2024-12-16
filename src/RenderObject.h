@@ -27,6 +27,8 @@ public:
 	const static int lightAmount = 3;
 	Light lights[lightAmount];
 
+	int ticks = 0;
+
 	void Render(GLint program, Matrix* mvp, Matrix* world);
 	Vector3 GetCenteredPosition();
 	void InitializeLights();
