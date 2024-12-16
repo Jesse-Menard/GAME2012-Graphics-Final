@@ -194,6 +194,7 @@ int main(void)
     // Whether we render the imgui demo widgets
     bool imguiDemo = false;
     bool camToggle = true;
+    bool debugToggle = false;
     bool freeCam = false;
     bool showLights = false;
     int normalToggle = false;
@@ -365,17 +366,22 @@ int main(void)
 
             Vector2 mouseDelta = { mx - pmx, my - pmy };
 
-            if (IsKeyPressed(GLFW_KEY_I))
-                imguiDemo = !imguiDemo;
+            if (IsKeyPressed(GLFW_KEY_APOSTROPHE))
+                debugToggle = !debugToggle;
 
-            if (IsKeyPressed(GLFW_KEY_C))
-                camToggle = !camToggle;
+            if (debugToggle)
+            {
+                if (IsKeyPressed(GLFW_KEY_C))
+                    camToggle = !camToggle;
 
-            if (IsKeyPressed(GLFW_KEY_L))
-                showLights = !showLights;
+                if (IsKeyPressed(GLFW_KEY_L))
+                    showLights = !showLights;
 
-            if (IsKeyPressed(GLFW_KEY_T))
-                puzzleSolved = true;
+                if (IsKeyPressed(GLFW_KEY_F))
+                    freeCam = !freeCam;
+                if (IsKeyPressed(GLFW_KEY_T))
+                    puzzleSolved = true;
+            }
 
             if (IsKeyPressed(GLFW_KEY_P))
                 PickupAction();
@@ -667,7 +673,7 @@ int main(void)
         ImGui::NewFrame();
         if (imguiDemo)
             ImGui::ShowDemoWindow();
-        else
+        else if (debugToggle)
         {
             ImGui::SliderFloat3("Camera Position", &camPos.x, -15.0f, 15.0f);
             ImGui::SliderFloat3("Front View", &frontView.x, -1.0f, 1.0f);
@@ -676,7 +682,6 @@ int main(void)
             ImGui::SliderFloat3("Light Position", &lights[0].position.x, -15.0f, 15.0f);
             ImGui::SliderFloat3("Light Direction", &lights[0].direction.x, -1.0f, 1.0f);
             ImGui::SliderFloat3("Light Color", &lights[0].color.x, 0.0f, 1.0f);
-            ImGui::SliderFloat3("Torch Light Color", &lights[16].color.x, 0.0f, 1.0f);
             ImGui::SliderFloat("Light Radius", &lights[0].radius, 0.0f, 15.0f);
             ImGui::SliderFloat("Light Intensity", &lights[0].intensity, 0.0f, 20.0f);
             ImGui::SliderFloat("Light FOV", &lights[0].FOV, 0.0f, 180.0f);
@@ -700,8 +705,8 @@ int main(void)
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("HeightScale", &heightScale, -0.25f, 0.25f);
             ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle); ImGui::SameLine();
-            ImGui::Checkbox("Show Lights", &showLights);
-
+            ImGui::Checkbox("Show Lights", &showLights);ImGui::SameLine();
+            ImGui::Checkbox("Free Cam", &freeCam);
 
             ImGui::SliderFloat("Near", &near, 0.0f, 10.0f);
             ImGui::SliderFloat("Far", &far,0.0f, 100.0f);
