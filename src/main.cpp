@@ -59,7 +59,7 @@ std::vector<RenderObject> objects;
 RenderObject* pedestals[4];
 
 Vector3 frontView = V3_FORWARD;
-Vector3 camPos{ 0.0f, 2.0f, 3.0f };
+Vector3 camPos{ 12.5f, 3.0f, 12.5f };
 
 Vector3 camX;
 Vector3 camY;
@@ -188,6 +188,7 @@ int main(void)
     // Whether we render the imgui demo widgets
     bool imguiDemo = false;
     bool camToggle = true;
+    bool freeCam = false;
     bool showLights = true;
     int normalToggle = false;
 
@@ -239,11 +240,11 @@ int main(void)
     items[3].key = 0;
 
     // Torches
-    objects[14] = RenderObject{ {-5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
-    objects[15] = RenderObject{ {5.5f, 3.0f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
-    objects[16] = RenderObject{ {0.0f, 3.0f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
-    objects[17] = RenderObject{ {0.0f, 3.0f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
-    objects[30] = RenderObject{ {13.9f, 3.0f, 13.9f}, V3_ONE * 5.0f, {0.0f, 135.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
+    objects[14] = RenderObject{ {-5.5f, 3.25f, 0.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
+    objects[15] = RenderObject{ {5.5f, 3.25f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
+    objects[16] = RenderObject{ {0.0f, 3.25f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
+    objects[17] = RenderObject{ {0.0f, 3.25f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
+    objects[30] = RenderObject{ {13.9f, 3.25f, 13.9f}, V3_ONE * 5.0f, {0.0f, 135.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
 
     // Pillars
 
@@ -422,36 +423,61 @@ int main(void)
             {
                 camTranslateValue = 0.20;
             }
-
-            if (IsKeyDown(GLFW_KEY_W))
+            if (freeCam)
             {
-                // forwards
-                camPos -= camZ * camTranslateValue;
+                if (IsKeyDown(GLFW_KEY_W))
+                {
+                    // forwards
+                    camPos -= camZ * camTranslateValue;
+                }
+                if (IsKeyDown(GLFW_KEY_S))
+                {
+                    // back
+                    camPos += camZ * camTranslateValue;
+                }
+                if (IsKeyDown(GLFW_KEY_A))
+                {
+                    // left
+                    camPos -= camX * camTranslateValue;
+                }
+                if (IsKeyDown(GLFW_KEY_D))
+                {
+                    // right
+                    camPos += camX * camTranslateValue;
+                }
+                if (IsKeyDown(GLFW_KEY_E))
+                {
+                    // up
+                    camPos += camY * camTranslateValue;
+                }
+                if (IsKeyDown(GLFW_KEY_Q))
+                {
+                    // down
+                    camPos -= camY * camTranslateValue;
+                }
             }
-            if (IsKeyDown(GLFW_KEY_S))
+            else
             {
-                // back
-                camPos += camZ * camTranslateValue;
-            }
-            if (IsKeyDown(GLFW_KEY_A))
-            {
-                // left
-                camPos -= camX * camTranslateValue;
-            }
-            if (IsKeyDown(GLFW_KEY_D))
-            {
-                // right
-                camPos += camX * camTranslateValue;
-            }
-            if (IsKeyDown(GLFW_KEY_E))
-            {
-                // up
-                camPos += camY * camTranslateValue;
-            }
-            if (IsKeyDown(GLFW_KEY_Q))
-            {
-                // down
-                camPos -= camY * camTranslateValue;
+                if (IsKeyDown(GLFW_KEY_W))
+                {
+                    // forwards
+                    camPos -= Normalize(Vector3{ frontView.x, 0.0f,frontView.z }) * camTranslateValue;
+                }
+                if (IsKeyDown(GLFW_KEY_S))
+                {
+                    // back
+                    camPos += Normalize(Vector3{ frontView.x, 0.0f,frontView.z }) * camTranslateValue;
+                }
+                if (IsKeyDown(GLFW_KEY_A))
+                {
+                    // left
+                    camPos -= Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * camTranslateValue;
+                }
+                if (IsKeyDown(GLFW_KEY_D))
+                {
+                    // right
+                    camPos += Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * camTranslateValue;
+                }
             }
         }
 
