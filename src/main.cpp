@@ -43,6 +43,7 @@ void PickupAction();
 void HoldItems();
 void PlaceItem(int slot);
 void CheckAnswer();
+void Collision();
 
 struct Item
 {
@@ -244,7 +245,7 @@ int main(void)
     objects[15] = RenderObject{ {5.5f, 3.25f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
     objects[16] = RenderObject{ {0.0f, 3.25f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
     objects[17] = RenderObject{ {0.0f, 3.25f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
-    objects[30] = RenderObject{ {13.9f, 3.25f, 13.9f}, V3_ONE * 5.0f, {0.0f, 135.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
+    objects[30] = RenderObject{ {-13.9f, 3.25f, -13.9f}, V3_ONE * 5.0f, {0.0f, 45.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
 
     // Pillars
 
@@ -480,6 +481,8 @@ int main(void)
                 }
             }
         }
+
+        Collision();
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -924,4 +927,26 @@ void CheckAnswer()
     }
     std::cout << "LETS FUCKING GOOOO" << std::endl;
     puzzleSolved = true;
+}
+
+void Collision()
+{
+    if (camPos.x > 14.5f)
+        camPos.x = 14.5f;
+    if (camPos.x < -14.5f)
+        camPos.x = -14.5f;
+    if (camPos.z > 14.5f)
+        camPos.z = 14.5f;
+    if (camPos.z < -14.5f)
+        camPos.z = -14.5f;
+
+    if (camPos.x > -5.5f && camPos.x < 5.5f &&
+        camPos.z > -5.5f && camPos.z < 5.5f)
+    {
+        if (abs(camPos.x) > abs(camPos.z))
+            camPos.x = camPos.x > 0 ? 5.5f : -5.5f;
+        else
+            camPos.z = camPos.z > 0 ? 5.5f : -5.5f;
+
+    }
 }
