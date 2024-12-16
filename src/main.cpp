@@ -41,6 +41,7 @@ Vector3 CalcFacingVector3(const Vector3 target, const Vector3 source);
 void LoadTexture(GLuint* texture, const char* filename, bool hasAlpha = false, bool singleChannel = false);
 void PickupAction();
 void HoldItems();
+void PlaceItem(int slot);
 
 struct Item
 {
@@ -52,6 +53,7 @@ struct Item
 Item items[4];
 std::vector<Light> lights;
 std::vector<RenderObject> objects;
+RenderObject* pedestals[4];
 
 Vector3 frontView = V3_FORWARD;
 Vector3 camPos{ 0.0f, 2.0f, 3.0f };
@@ -64,6 +66,8 @@ Matrix view;
 
 float camPitch = 0;
 float camYaw = 0;
+
+static int invSlot = 0;
 
 int main(void)
 {
@@ -155,6 +159,16 @@ int main(void)
     GLuint fishNormal = GL_NONE;
     LoadTexture(&fishNormal, "./assets/textures/fishNormal.jpg");
 
+    GLuint pillarTex = GL_NONE;
+    LoadTexture(&pillarTex, "./assets/textures/pillar.jpg");
+    GLuint pillarNormal = GL_NONE;
+    LoadTexture(&pillarNormal, "./assets/textures/pillarNormal.jpg");
+
+    GLuint pedestalTex = GL_NONE;
+    LoadTexture(&pedestalTex, "./assets/textures/pedestal2.jpg");
+    GLuint pedestalNormal = GL_NONE;
+    LoadTexture(&pedestalNormal, "./assets/textures/pedestalNormal2.jpg");
+
     float fov = 75.0f * DEG2RAD;
     float left = -1.0f;
     float right = 1.0f;
@@ -176,7 +190,7 @@ int main(void)
     // ENABLE BACKFACE CULLING
     glEnable(GL_CULL_FACE);
 
-    Mesh sphereMesh, insidePlaneMesh, outsidePlaneMesh, horseMesh, elephantMesh, sconceMesh, dragonMesh, fishMesh;
+    Mesh sphereMesh, insidePlaneMesh, outsidePlaneMesh, horseMesh, elephantMesh, sconceMesh, dragonMesh, fishMesh, pillarMesh, pedestalMesh;
     CreateMesh(&sphereMesh, SPHERE);
     CreateMesh(&insidePlaneMesh, PLANE);
     CreateMesh(&outsidePlaneMesh, PLANE, {6.0f, 1.0f});
@@ -185,8 +199,10 @@ int main(void)
     CreateMesh(&sconceMesh, "./assets/meshes/sconce.obj");
     CreateMesh(&dragonMesh, "./assets/meshes/dragon.obj");
     CreateMesh(&fishMesh, "./assets/meshes/fish.obj");
+    CreateMesh(&pillarMesh, "./assets/meshes/pillar.obj");
+    CreateMesh(&pedestalMesh, "./assets/meshes/pedestal.obj");
 
-    objects.resize(20); // positions from bottom corner of obj, will center if have time (doubt, heh) 
+    objects.resize(35); // positions from bottom corner of obj, will center if have time (doubt, heh) 
     objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f},  {30.0f, 30.0f, 1.0f}, {-90.0f,0.0f,0.0f},  &insidePlaneMesh, floorTex, floorNormal, NULL, false};
     objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, {90.0f, 0.0f, 0.0f}, &insidePlaneMesh, floorTex, floorNormal, NULL, false};
     
@@ -218,9 +234,32 @@ int main(void)
     objects[15] = RenderObject{ {5.5f, 3.0f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
     objects[16] = RenderObject{ {0.0f, 3.0f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
     objects[17] = RenderObject{ {0.0f, 3.0f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
+    objects[30] = RenderObject{ {13.9f, 3.0f, 13.9f}, V3_ONE * 5.0f, {0.0f, 135.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
 
+    // Pillars
 
-    lights.resize(21);
+    objects[18] = RenderObject{ {5.0f, -0.1f, 5.0f}, V3_ONE * 5.0f,     {0.0f, 0.0f, 0.0f},  &pillarMesh, pillarTex, pillarNormal, false};
+    objects[19] = RenderObject{ {-5.0f, -0.1f, -5.0f}, V3_ONE * 5.0f,   {0.0f, 180.0f, 0.0f},  &pillarMesh, pillarTex, pillarNormal, false };
+    objects[20] = RenderObject{ {5.0f, -0.1f, -5.0f}, V3_ONE * 5.0f,    {0.0f, -90.0f, 0.0f},  &pillarMesh, pillarTex, pillarNormal, false };
+    objects[21] = RenderObject{ {-5.0f, -0.1f, 5.0f}, V3_ONE * 5.0f,    {0.0f, 90.0f, 0.0f},  &pillarMesh, pillarTex, pillarNormal, false };
+    objects[22] = RenderObject{ {15.0f, -0.1f, 15.0f}, V3_ONE * 5.0f,   {0.0f, 0.0f, 0.0f},  &pillarMesh, pillarTex, pillarNormal, false };
+    objects[23] = RenderObject{ {-15.0f, -0.1f, -15.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &pillarMesh, pillarTex, pillarNormal, false };
+    objects[24] = RenderObject{ {15.0f, -0.1f, -15.0f}, V3_ONE * 5.0f,  {0.0f, -90.0f, 0.0f},  &pillarMesh, pillarTex, pillarNormal, false };
+    objects[25] = RenderObject{ {-15.0f, -0.1f, 15.0f}, V3_ONE * 5.0f,  {0.0f, 90.0f, 0.0f},   &pillarMesh, pillarTex, pillarNormal, false };
+
+    // Item pedestals
+
+    objects[26] = RenderObject{ {11.66f, 0.0f, 14.0f}, V3_ONE * 3.0f,  {0.0f, 180.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
+    objects[27] = RenderObject{ {8.33f, 0.0f, 14.0f}, V3_ONE * 3.0f,  {0.0f, 180.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
+    objects[28] = RenderObject{ {14.0f, 0.0f, 8.33f}, V3_ONE * 3.0f,  {0.0f, -90.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
+    objects[29] = RenderObject{ {14.0f, 0.0f, 11.66f}, V3_ONE * 3.0f,  {0.0f, -90.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
+
+    pedestals[0] = &objects[26];
+    pedestals[1] = &objects[27];
+    pedestals[2] = &objects[28];
+    pedestals[3] = &objects[29];
+
+    lights.resize(24);
     lights[0] = Light{ {-10.0f, 2.5f, 0.0f}, V3_ONE, POINT_LIGHT};
     lights[0].radius = 2.0f;
     lights[0].intensity = 2.0f;
@@ -240,6 +279,7 @@ int main(void)
     objects[15].lightIndex = objects[14].lightIndex + 1 * RenderObject::lightAmount;
     objects[16].lightIndex = objects[14].lightIndex + 2 * RenderObject::lightAmount;
     objects[17].lightIndex = objects[14].lightIndex + 3 * RenderObject::lightAmount;
+    objects[30].lightIndex = objects[14].lightIndex + 4 * RenderObject::lightAmount;
     
     for (int i = 0; i < RenderObject::lightAmount; i++)
     {
@@ -247,12 +287,13 @@ int main(void)
         lights[objects[15].lightIndex + i] = objects[15].lights[i];
         lights[objects[16].lightIndex + i] = objects[16].lights[i];
         lights[objects[17].lightIndex + i] = objects[17].lights[i];
+        lights[objects[30].lightIndex + i] = objects[30].lights[i];
     }
 
 
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
-    float heightScale = 0.025f;
+    float heightScale = 0.02f;
 
 
     glEnable(GL_DEPTH_TEST);
@@ -323,6 +364,18 @@ int main(void)
 
             if (IsKeyPressed(GLFW_KEY_P))
                 PickupAction();
+
+            if (IsKeyPressed(GLFW_KEY_1))
+                PlaceItem(0);
+
+            if (IsKeyPressed(GLFW_KEY_2))
+                PlaceItem(1);
+            
+            if (IsKeyPressed(GLFW_KEY_3))
+                PlaceItem(2);
+            
+            if (IsKeyPressed(GLFW_KEY_4))
+                PlaceItem(3);
 
             if (IsKeyPressed(GLFW_KEY_N))
                 normalToggle = !normalToggle; // I know what I'm doing intellisense, go away >:(
@@ -755,7 +808,6 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha, bool sing
 
 void PickupAction()
 {
-    static int slot = 0;
     for (int i = 0; i < 4; i++)
     {
         if(items[i].object != nullptr )
@@ -763,12 +815,35 @@ void PickupAction()
             if (Distance(items[i].object->position, camPos) < 2.0f && items[i].pickedUp == false)
             {
                 items[i].pickedUp = true;
-                items[i].slot = slot;
-                slot++;
+                items[i].slot = invSlot;
+                invSlot++;
 
                 break;
             }
         }
+    }
+}
+
+void PlaceItem(int slot)
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (Distance(pedestals[i]->position, camPos) < 3.0f)
+        {
+            for (int k = 0; k < 4; k++)
+            {
+                if(items[k].pickedUp == true && items[k].slot == slot)
+                {
+                    items[k].pickedUp = false;
+                    invSlot = items[k].slot;
+                    items[k].slot = NULL;
+                    items[k].object->position = pedestals[i]->position + Vector3{0.0f, 2.0f, 0.0f};
+                    items[k].object->rotationVec = pedestals[i]->rotationVec;
+                    items[k].object->scale = V3_ONE * 5.0f;
+                }
+            }
+        }
+
     }
 }
 
