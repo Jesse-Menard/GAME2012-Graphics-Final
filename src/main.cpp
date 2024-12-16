@@ -118,29 +118,22 @@ int main(void)
     // Flipping our image vertically is the best way to solve this as it ensures a "one-stop" solution (rather than an in-shader solution).
     stbi_set_flip_vertically_on_load(true);
 
-    // Wall textures from https://polyhaven.com/a/brick_wall_001
-    GLuint texWallBase = GL_NONE;
-    LoadTexture(&texWallBase, "./assets/textures/WallDiffuse.jpg");
-    GLuint texWallNormal = GL_NONE;
-    LoadTexture(&texWallNormal, "./assets/textures/WallNormal.jpg");
-    GLuint texWallSpec = GL_NONE;
-    LoadTexture(&texWallSpec, "./assets/textures/WallSpec.jpg");
-
+    // Walls from https://polyhaven.com/a/dry_riverbed_rock
     GLuint texStone = GL_NONE;
-    LoadTexture(&texStone, "./assets/textures/Stone.jpg");
+    LoadTexture(&texStone, "./assets/textures/stone.jpg");
     GLuint texStoneNormal = GL_NONE;
-    LoadTexture(&texStoneNormal, "./assets/textures/StoneNormal.jpg");
+    LoadTexture(&texStoneNormal, "./assets/textures/stoneNormal.jpg");
     GLuint texStoneHeight = GL_NONE;
-    LoadTexture(&texStoneHeight, "./assets/textures/StoneHeightInv.jpg");
+    LoadTexture(&texStoneHeight, "./assets/textures/stoneHeightInv.jpg");
 
     // Floor from https://polyhaven.com/a/recycled_brick_floor
     GLuint floorTex = GL_NONE;
-    LoadTexture(&floorTex, "./assets/textures/Floor.jpg");
+    LoadTexture(&floorTex, "./assets/textures/floor.jpg");
     GLuint floorNormal = GL_NONE;
-    LoadTexture(&floorNormal, "./assets/textures/FloorNormal.jpg");
+    LoadTexture(&floorNormal, "./assets/textures/floorNormal.jpg");
 
     GLuint horseTex = GL_NONE;
-    LoadTexture(&horseTex, "./assets/textures/horse.png");
+    LoadTexture(&horseTex, "./assets/textures/horse.jpg");
     GLuint horseNormal = GL_NONE;
     LoadTexture(&horseNormal, "./assets/textures/horseNormal.jpg");
 
@@ -150,9 +143,9 @@ int main(void)
     LoadTexture(&elephantNormal, "./assets/textures/elephantNormal.jpg");
 
     GLuint sconceTex = GL_NONE;
-    LoadTexture(&sconceTex, "./assets/textures/sconce.png");
+    LoadTexture(&sconceTex, "./assets/textures/sconce.jpg");
     GLuint sconceNormal = GL_NONE;
-    LoadTexture(&sconceNormal, "./assets/textures/sconceNormal.png");
+    LoadTexture(&sconceNormal, "./assets/textures/sconceNormal.jpg");
 
     GLuint dragonTex = GL_NONE;
     LoadTexture(&dragonTex, "./assets/textures/dragon.jpg");
@@ -372,8 +365,8 @@ int main(void)
             if (IsKeyPressed(GLFW_KEY_L))
                 showLights = !showLights;
 
-            if (IsKeyPressed(GLFW_KEY_T))
-                puzzleSolved = true;
+            //  if (IsKeyPressed(GLFW_KEY_T))
+            //      puzzleSolved = true;
 
             if (IsKeyPressed(GLFW_KEY_P))
                 PickupAction();
