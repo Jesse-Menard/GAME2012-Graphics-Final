@@ -42,12 +42,15 @@ void LoadTexture(GLuint* texture, const char* filename, bool hasAlpha = false, b
 void PickupAction();
 void HoldItems();
 void PlaceItem(int slot);
+void CheckAnswer();
 
 struct Item
 {
     RenderObject* object;
     bool pickedUp;
-    int slot;
+    int slot = 5;
+    int key;
+    int pedestal = 5;
 };
 
 Item items[4];
@@ -67,6 +70,7 @@ Matrix view;
 float camPitch = 0;
 float camYaw = 0;
 
+bool puzzleSolved = false;
 static int invSlot = 0;
 
 int main(void)
@@ -224,10 +228,15 @@ int main(void)
     objects[12] = RenderObject{ {-1.0f, 0.0f, 1.0f}, V3_ONE * 5.0f, V3_ZERO, &dragonMesh, dragonTex, dragonNormal, false };
     objects[13] = RenderObject{ {1.0f, 0.0f, -1.0f}, V3_ONE * 5.0f, V3_ZERO, &fishMesh, fishTex, fishNormal, false };
     
+    // ANSWER = .. hey, no cheating, go away! (fdhe)
     items[0].object = &objects[10];
+    items[0].key = 2;
     items[1].object = &objects[11];
+    items[1].key = 3;
     items[2].object = &objects[12];
+    items[2].key = 1;
     items[3].object = &objects[13];
+    items[3].key = 0;
 
     // Torches
     objects[14] = RenderObject{ {-5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
@@ -249,10 +258,10 @@ int main(void)
 
     // Item pedestals
 
-    objects[26] = RenderObject{ {11.66f, 0.0f, 14.0f}, V3_ONE * 3.0f,  {0.0f, 180.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
-    objects[27] = RenderObject{ {8.33f, 0.0f, 14.0f}, V3_ONE * 3.0f,  {0.0f, 180.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
-    objects[28] = RenderObject{ {14.0f, 0.0f, 8.33f}, V3_ONE * 3.0f,  {0.0f, -90.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
-    objects[29] = RenderObject{ {14.0f, 0.0f, 11.66f}, V3_ONE * 3.0f,  {0.0f, -90.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
+    objects[26] = RenderObject{ {-14.0f, 0.0f, -8.33f}, V3_ONE * 3.0f,  {0.0f, 90.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
+    objects[27] = RenderObject{ {-14.0f, 0.0f, -11.66f}, V3_ONE * 3.0f,  {0.0f, 90.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
+    objects[28] = RenderObject{ {-11.66f, 0.0f, -14.0f}, V3_ONE * 3.0f,  {0.0f, 0.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
+    objects[29] = RenderObject{ {-8.33f, 0.0f, -14.0f}, V3_ONE * 3.0f,  {0.0f, 0.0f, 0.0f},   &pedestalMesh, pedestalTex, pedestalNormal, false };
 
     pedestals[0] = &objects[26];
     pedestals[1] = &objects[27];
@@ -272,7 +281,7 @@ int main(void)
     //  lights[2] = Light();
     //  lights[2].color = { 1.0f, 0.0f, 0.0f };
 
-    lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 20, 15 };
+    lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 35, 20 };
     lights[3].intensity = 0.6f;
 
     objects[14].lightIndex = 4;
@@ -364,6 +373,9 @@ int main(void)
 
             if (IsKeyPressed(GLFW_KEY_P))
                 PickupAction();
+
+            if (IsKeyPressed(GLFW_KEY_O))
+                CheckAnswer();
 
             if (IsKeyPressed(GLFW_KEY_1))
                 PlaceItem(0);
@@ -568,8 +580,8 @@ int main(void)
             ImGui::SliderFloat3("Light Color", &lights[0].color.x, 0.0f, 1.0f);
             ImGui::SliderFloat("Light Radius", &lights[0].radius, 0.0f, 15.0f);
             ImGui::SliderFloat("Light Intensity", &lights[0].intensity, 0.0f, 20.0f);
-            ImGui::SliderFloat("Light FOV", &lights[0].FOV, 0.0f, 180.0f);
-            ImGui::SliderFloat("Light FOV Blend", &lights[0].FOVbloom, 0.0f, 180.0f - lights[0].FOV);      
+            ImGui::SliderFloat("Cam FOV", &lights[3].FOV, 0.0f, 180.0f);
+            ImGui::SliderFloat("Cam FOV Blend", &lights[3].FOVbloom, 0.0f, 180.0f - lights[3].FOV);      
             ImGui::SliderInt("Light Type", &lights[0].type, 0, 2);
             ImGui::NewLine();
 
@@ -816,6 +828,7 @@ void PickupAction()
             {
                 items[i].pickedUp = true;
                 items[i].slot = invSlot;
+                items[i].pedestal = 5;
                 invSlot++;
 
                 break;
@@ -832,19 +845,33 @@ void PlaceItem(int slot)
         {
             for (int k = 0; k < 4; k++)
             {
+                if (items[k].pedestal == i)
+                    return;
+            }
+            for (int k = 0; k < 4; k++)
+            {
                 if(items[k].pickedUp == true && items[k].slot == slot)
                 {
                     items[k].pickedUp = false;
-                    invSlot = items[k].slot;
-                    items[k].slot = NULL;
-                    items[k].object->position = pedestals[i]->position + Vector3{0.0f, 2.0f, 0.0f};
+                    items[k].slot = 5;
+                    items[k].object->position = pedestals[i]->position + Vector3{0.0f, 2.05f, 0.0f};
                     items[k].object->rotationVec = pedestals[i]->rotationVec;
                     items[k].object->scale = V3_ONE * 5.0f;
+                    items[k].pedestal = i;
+                    invSlot = 0;
+                    for (int j = 0; j < 4; j++)
+                    {
+                        if (items[j].slot < 5)
+                            invSlot++;
+                        else
+                            break;
+                    }
                 }
             }
         }
-
     }
+
+    CheckAnswer();
 }
 
 void HoldItems()
@@ -858,4 +885,17 @@ void HoldItems()
             items[i].object->scale = V3_ONE;
         }
     }
+}
+
+void CheckAnswer()
+{
+    for (int i = 0; i < 4; i++)
+    {
+        if (items[i].key != items[i].pedestal)
+        {
+            return;
+        }
+    }
+    std::cout << "LETS FUCKING GOOOO" << std::endl;
+    puzzleSolved = true;
 }
