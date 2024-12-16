@@ -83,8 +83,8 @@ void RenderObject::InitializeLights()
 	{
 		lights[i] = Light{ position + Vector3{0.0f, i * (1.5f / lightAmount), 0.0f}, {1.0f, 0.40f + i * (0.5f / lightAmount), 0.0f}, POINT_LIGHT, V3_UP };
 		lights[i].intensity = 1.0f;
-		lights[i].radius = 0.4f;
-		lights[i].specularScale = 32.0f;
+		lights[i].radius = 0.6f;
+		lights[i].specularScale = 64.0f;
 	}
 }
 

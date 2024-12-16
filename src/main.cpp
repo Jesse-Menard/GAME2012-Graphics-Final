@@ -60,7 +60,7 @@ std::vector<RenderObject> objects;
 RenderObject* pedestals[4];
 
 Vector3 frontView = V3_FORWARD;
-Vector3 camPos{ 12.5f, 3.0f, 12.5f };
+Vector3 camPos{ -11.5f, 3.0f, -11.5f };
 
 Vector3 camX;
 Vector3 camY;
@@ -174,6 +174,9 @@ int main(void)
     GLuint pedestalNormal = GL_NONE;
     LoadTexture(&pedestalNormal, "./assets/textures/pedestalNormal2.jpg");
 
+    GLuint potTex = GL_NONE;
+    LoadTexture(&potTex, "./assets/textures/POT_base.png", true);
+
     float fov = 75.0f * DEG2RAD;
     float left = -1.0f;
     float right = 1.0f;
@@ -190,13 +193,13 @@ int main(void)
     bool imguiDemo = false;
     bool camToggle = true;
     bool freeCam = false;
-    bool showLights = true;
+    bool showLights = false;
     int normalToggle = false;
 
     // ENABLE BACKFACE CULLING
     glEnable(GL_CULL_FACE);
 
-    Mesh sphereMesh, insidePlaneMesh, outsidePlaneMesh, horseMesh, elephantMesh, sconceMesh, dragonMesh, fishMesh, pillarMesh, pedestalMesh;
+    Mesh sphereMesh, insidePlaneMesh, outsidePlaneMesh, horseMesh, elephantMesh, sconceMesh, dragonMesh, fishMesh, pillarMesh, pedestalMesh, potMesh;
     CreateMesh(&sphereMesh, SPHERE);
     CreateMesh(&insidePlaneMesh, PLANE);
     CreateMesh(&outsidePlaneMesh, PLANE, {6.0f, 1.0f});
@@ -207,6 +210,7 @@ int main(void)
     CreateMesh(&fishMesh, "./assets/meshes/fish.obj");
     CreateMesh(&pillarMesh, "./assets/meshes/pillar.obj");
     CreateMesh(&pedestalMesh, "./assets/meshes/pedestal.obj");
+    CreateMesh(&potMesh, "./assets/meshes/potemkin.obj");
 
     objects.resize(35); // positions from bottom corner of obj, will center if have time (doubt, heh) 
     objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f},  {30.0f, 30.0f, 1.0f}, {-90.0f,0.0f,0.0f},  &insidePlaneMesh, floorTex, floorNormal, NULL, false};
@@ -225,10 +229,10 @@ int main(void)
     objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
     
     // Items
-    objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f},   V3_ONE * 5.0f, V3_ZERO, &horseMesh,    horseTex,    horseNormal,    false };
-    objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V3_ZERO, &elephantMesh, elephantTex, elephantNormal, false };
-    objects[12] = RenderObject{ {-1.0f, 0.0f, 1.0f}, V3_ONE * 5.0f, V3_ZERO, &dragonMesh, dragonTex, dragonNormal, false };
-    objects[13] = RenderObject{ {1.0f, 0.0f, -1.0f}, V3_ONE * 5.0f, V3_ZERO, &fishMesh, fishTex, fishNormal, false };
+    objects[10] = RenderObject{ {14.0f, 0.0f, 0.0f},   V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &horseMesh,    horseTex,    horseNormal,    false };
+    objects[11] = RenderObject{ {0.0f, 0.0f, 14.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &elephantMesh, elephantTex, elephantNormal, false};
+    objects[12] = RenderObject{ {-14.0f, 0.0f, 0.0f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f}, &dragonMesh, dragonTex, dragonNormal, false};
+    objects[13] = RenderObject{ {0.0f, 0.0f, -14.0f}, V3_ONE * 5.0f, V3_ZERO, &fishMesh, fishTex, fishNormal, false };
     
     // ANSWER = .. hey, no cheating, go away! (fdhe)
     items[0].object = &objects[10];
@@ -245,7 +249,7 @@ int main(void)
     objects[15] = RenderObject{ {5.5f, 3.25f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
     objects[16] = RenderObject{ {0.0f, 3.25f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
     objects[17] = RenderObject{ {0.0f, 3.25f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
-    objects[30] = RenderObject{ {-13.9f, 3.25f, -13.9f}, V3_ONE * 5.0f, {0.0f, 45.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
+    objects[30] = RenderObject{ {-13.9f, 3.25f, -13.9f}, V3_ONE * 5.0f, {0.0f, -45.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
 
     // Pillars
 
@@ -270,18 +274,13 @@ int main(void)
     pedestals[2] = &objects[28];
     pedestals[3] = &objects[29];
 
+    // Reward
+    objects[31] = RenderObject{ {0.0f, 0.5f, 0.0f}, V3_ONE * 1.5f,  {0.0f, 0.0f, 0.0f},   &potMesh, potTex, NULL, false };
+    
+    
     lights.resize(24);
-    lights[0] = Light{ {-10.0f, 2.5f, 0.0f}, V3_ONE, POINT_LIGHT};
-    lights[0].radius = 2.0f;
-    lights[0].intensity = 2.0f;
+    lights[0] = Light{ {0.0f, 4.9f, 0.0f},{0.0f, 0.0f, 0.0f} , SPOT_LIGHT, {0.0f, -1.0f, 0.0f},  30, 7 };
 
-    lights[1] = Light{ {0.0, 2.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, POINT_LIGHT };
-    lights[1].intensity = 1.0f;
-    lights[1].specularScale = 32.0f;
-    lights[1].radius = 1.0f;
-
-    //  lights[2] = Light();
-    //  lights[2].color = { 1.0f, 0.0f, 0.0f };
 
     lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 35, 20 };
     lights[3].intensity = 0.6f;
@@ -304,7 +303,7 @@ int main(void)
 
     float ambientFactor = 0.25f;
     float diffuseFactor = 1.0f;
-    float heightScale = 0.02f;
+    float heightScale = 0.005f;
 
 
     glEnable(GL_DEPTH_TEST);
@@ -373,6 +372,9 @@ int main(void)
             if (IsKeyPressed(GLFW_KEY_L))
                 showLights = !showLights;
 
+            if (IsKeyPressed(GLFW_KEY_T))
+                puzzleSolved = true;
+
             if (IsKeyPressed(GLFW_KEY_P))
                 PickupAction();
 
@@ -398,15 +400,16 @@ int main(void)
             {
                 mouseDelta = V2_ZERO;
             }
+            frontView = Multiply(V3_FORWARD, camRotation);
 
             camPitch -= mouseDelta.y * panScale;
-            if (camPitch > 88)
+            if (camPitch > 89)
             {
-                camPitch = 88;
+                camPitch = 89;
             }
-            else if (camPitch < -88)
+            else if (camPitch < -89)
             {
-                camPitch = -88;
+                camPitch = -89;
             }
 
             camYaw -= mouseDelta.x * panScale;
@@ -416,13 +419,11 @@ int main(void)
             camY = { camRotation.m4, camRotation.m5, camRotation.m6 };
             camZ = { camRotation.m8, camRotation.m9, camRotation.m10 };
 
-            frontView = Multiply(V3_FORWARD, camRotation);
-
             // Slows cam when shifted
-            float camTranslateValue = 0.10;
+            float camTranslateValue = 0.225;
             if (IsKeyDown(GLFW_KEY_LEFT_SHIFT))
             {
-                camTranslateValue = 0.20;
+                camTranslateValue = 0.4;
             }
             if (freeCam)
             {
@@ -479,10 +480,10 @@ int main(void)
                     // right
                     camPos += Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * camTranslateValue;
                 }
+                Collision();
             }
         }
 
-        Collision();
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -510,6 +511,40 @@ int main(void)
         // ------------------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------------------
+
+        /// Victory
+        if (puzzleSolved)
+        {
+            const float step = 1.0f / 60.0f;
+            objects[31].rotationVec.y += 6;
+            lights[0].color = { 1.0f, 1.0f, 1.0f };
+
+            if (objects[14].position.x > -14.5f)
+            {
+                objects[14].position.x -= 9.0f * step;
+                objects[15].position.x += 9.0f * step;
+                objects[16].position.z += 9.0f * step;
+                objects[17].position.z -= 9.0f * step;
+            }
+
+            if (objects[14].rotationVec.y < 360)
+            {
+                objects[14].rotationVec.y += 180 * step;
+                objects[15].rotationVec.y += 180 * step;
+                objects[16].rotationVec.y += 180 * step;
+                objects[17].rotationVec.y += 180 * step;
+            }
+
+            if (objects[6].position.y > -5.0f)
+            {
+                objects[6].position.y -= 5.0f * step;
+                objects[7].position.y -= 5.0f * step;
+                objects[8].position.y -= 5.0f * step;
+                objects[9].position.y -= 5.0f * step;
+            }
+        }
+
+
 
 
         //world = Translate(-0.5, -0.5, 0) * RotateX(DEG2RAD * planeRotationX) *  RotateY(DEG2RAD * planeRotationY) *  RotateZ(DEG2RAD * planeRotationY) * Scale(10, 10, 10);//RotateX(DEG2RAD * 90) * Translate(-0.5f, 0.0f, -0.5f) * Scale(10, 1, 10);
@@ -570,10 +605,6 @@ int main(void)
 
         // Lights
 
-        lights[0].position = Multiply(lights[0].position, RotateY(sin(dt * 3)));
-        //  lights[0].direction = CalcFacingVector3(Vector3{ 0 }, lights[0].position);
-        //lights[0].position = objects[0].position;
-        lights[2].position = objects[0].GetCenteredPosition();
         lights[3].position = camPos;
         lights[3].direction = frontView * -1.0f;
 
@@ -609,9 +640,11 @@ int main(void)
             ImGui::SliderFloat3("Light Color", &lights[0].color.x, 0.0f, 1.0f);
             ImGui::SliderFloat("Light Radius", &lights[0].radius, 0.0f, 15.0f);
             ImGui::SliderFloat("Light Intensity", &lights[0].intensity, 0.0f, 20.0f);
+            ImGui::SliderFloat("Light FOV", &lights[0].FOV, 0.0f, 180.0f);
+            ImGui::SliderFloat("Light FOV Blend", &lights[0].FOVbloom, 0.0f, 180.0f - lights[0].FOV);     
+            ImGui::SliderInt("Light Type", &lights[0].type, 0, 2);
             ImGui::SliderFloat("Cam FOV", &lights[3].FOV, 0.0f, 180.0f);
             ImGui::SliderFloat("Cam FOV Blend", &lights[3].FOVbloom, 0.0f, 180.0f - lights[3].FOV);      
-            ImGui::SliderInt("Light Type", &lights[0].type, 0, 2);
             ImGui::NewLine();
 
             ImGui::SliderFloat3("Object Position",  &objects[10].position.x, -15.0f, 15.0f);
@@ -853,7 +886,7 @@ void PickupAction()
     {
         if(items[i].object != nullptr )
         {
-            if (Distance(items[i].object->position, camPos) < 2.0f && items[i].pickedUp == false)
+            if (Distance(Vector2{ items[i].object->position.x, items[i].object->position.z }, Vector2{ camPos.x, camPos.z }) < 2.0f && items[i].pickedUp == false)
             {
                 items[i].pickedUp = true;
                 items[i].slot = invSlot;
@@ -870,7 +903,7 @@ void PlaceItem(int slot)
 {
     for (int i = 0; i < 4; i++)
     {
-        if (Distance(pedestals[i]->position, camPos) < 3.0f)
+        if (Distance(Vector2{ pedestals[i]->position.x, pedestals[i]->position.z }, Vector2{ camPos.x, camPos.z }) < 2.0f)
         {
             for (int k = 0; k < 4; k++)
             {
@@ -925,7 +958,6 @@ void CheckAnswer()
             return;
         }
     }
-    std::cout << "LETS FUCKING GOOOO" << std::endl;
     puzzleSolved = true;
 }
 
@@ -941,12 +973,11 @@ void Collision()
         camPos.z = -14.5f;
 
     if (camPos.x > -5.5f && camPos.x < 5.5f &&
-        camPos.z > -5.5f && camPos.z < 5.5f)
+        camPos.z > -5.5f && camPos.z < 5.5f && !puzzleSolved)
     {
         if (abs(camPos.x) > abs(camPos.z))
             camPos.x = camPos.x > 0 ? 5.5f : -5.5f;
         else
             camPos.z = camPos.z > 0 ? 5.5f : -5.5f;
-
     }
 }
