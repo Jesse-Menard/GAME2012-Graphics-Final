@@ -46,6 +46,7 @@ struct Item
 {
     RenderObject* object;
     bool pickedUp;
+    int slot;
 };
 
 Item items[4];
@@ -144,6 +145,16 @@ int main(void)
     GLuint sconceNormal = GL_NONE;
     LoadTexture(&sconceNormal, "./assets/textures/sconceNormal.png");
 
+    GLuint dragonTex = GL_NONE;
+    LoadTexture(&dragonTex, "./assets/textures/dragon.jpg");
+    GLuint dragonNormal = GL_NONE;
+    LoadTexture(&dragonNormal, "./assets/textures/dragonNormal.jpg");
+
+    GLuint fishTex = GL_NONE;
+    LoadTexture(&fishTex, "./assets/textures/fish.jpg");
+    GLuint fishNormal = GL_NONE;
+    LoadTexture(&fishNormal, "./assets/textures/fishNormal.jpg");
+
     float fov = 75.0f * DEG2RAD;
     float left = -1.0f;
     float right = 1.0f;
@@ -165,13 +176,15 @@ int main(void)
     // ENABLE BACKFACE CULLING
     glEnable(GL_CULL_FACE);
 
-    Mesh sphereMesh, insidePlaneMesh, outsidePlaneMesh, horseMesh, elephantMesh, sconceMesh;// , horse;
+    Mesh sphereMesh, insidePlaneMesh, outsidePlaneMesh, horseMesh, elephantMesh, sconceMesh, dragonMesh, fishMesh;
     CreateMesh(&sphereMesh, SPHERE);
     CreateMesh(&insidePlaneMesh, PLANE);
     CreateMesh(&outsidePlaneMesh, PLANE, {6.0f, 1.0f});
     CreateMesh(&horseMesh, "./assets/meshes/horse.obj");
     CreateMesh(&elephantMesh, "./assets/meshes/elephant.obj");
     CreateMesh(&sconceMesh, "./assets/meshes/sconce.obj");
+    CreateMesh(&dragonMesh, "./assets/meshes/dragon.obj");
+    CreateMesh(&fishMesh, "./assets/meshes/fish.obj");
 
     objects.resize(20); // positions from bottom corner of obj, will center if have time (doubt, heh) 
     objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f},  {30.0f, 30.0f, 1.0f}, {-90.0f,0.0f,0.0f},  &insidePlaneMesh, floorTex, floorNormal, NULL, false};
@@ -192,14 +205,19 @@ int main(void)
     // Items
     objects[10] = RenderObject{ {1.0f, 1.0f, 1.0f},   V3_ONE * 5.0f, V3_ZERO, &horseMesh,    horseTex,    horseNormal,    false };
     objects[11] = RenderObject{ {-1.0f, 1.0f, -1.0f}, V3_ONE * 5.0f, V3_ZERO, &elephantMesh, elephantTex, elephantNormal, false };
+    objects[12] = RenderObject{ {-1.0f, 0.0f, 1.0f}, V3_ONE * 5.0f, V3_ZERO, &dragonMesh, dragonTex, dragonNormal, false };
+    objects[13] = RenderObject{ {1.0f, 0.0f, -1.0f}, V3_ONE * 5.0f, V3_ZERO, &fishMesh, fishTex, fishNormal, false };
     
     items[0].object = &objects[10];
+    items[1].object = &objects[11];
+    items[2].object = &objects[12];
+    items[3].object = &objects[13];
 
     // Torches
-    objects[12] = RenderObject{ {-5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
-    objects[13] = RenderObject{ {5.5f, 3.0f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
-    objects[14] = RenderObject{ {0.0f, 3.0f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
-    objects[15] = RenderObject{ {0.0f, 3.0f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
+    objects[14] = RenderObject{ {-5.5f, 3.0f, 0.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
+    objects[15] = RenderObject{ {5.5f, 3.0f, 0.0f},  V3_ONE * 5.0f, {0.0f, 0.0f, 0.0f},   &sconceMesh, sconceTex, sconceNormal, true};
+    objects[16] = RenderObject{ {0.0f, 3.0f, 5.5f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &sconceMesh, sconceTex, sconceNormal, true};
+    objects[17] = RenderObject{ {0.0f, 3.0f, -5.5f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f},  &sconceMesh, sconceTex, sconceNormal, true};
 
 
     lights.resize(21);
@@ -218,17 +236,17 @@ int main(void)
     lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 20, 15 };
     lights[3].intensity = 0.6f;
 
-    objects[12].lightIndex = 4;
-    objects[13].lightIndex = objects[12].lightIndex + 1 * RenderObject::lightAmount;
-    objects[14].lightIndex = objects[12].lightIndex + 2 * RenderObject::lightAmount;
-    objects[15].lightIndex = objects[12].lightIndex + 3 * RenderObject::lightAmount;
+    objects[14].lightIndex = 4;
+    objects[15].lightIndex = objects[14].lightIndex + 1 * RenderObject::lightAmount;
+    objects[16].lightIndex = objects[14].lightIndex + 2 * RenderObject::lightAmount;
+    objects[17].lightIndex = objects[14].lightIndex + 3 * RenderObject::lightAmount;
     
-    for (int i = 0; i < objects[12].lightAmount; i++)
+    for (int i = 0; i < RenderObject::lightAmount; i++)
     {
-        lights[objects[12].lightIndex + i] = objects[12].lights[i];
-        lights[objects[13].lightIndex + i] = objects[13].lights[i];
         lights[objects[14].lightIndex + i] = objects[14].lights[i];
         lights[objects[15].lightIndex + i] = objects[15].lights[i];
+        lights[objects[16].lightIndex + i] = objects[16].lights[i];
+        lights[objects[17].lightIndex + i] = objects[17].lights[i];
     }
 
 
@@ -737,14 +755,18 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha, bool sing
 
 void PickupAction()
 {
+    static int slot = 0;
     for (int i = 0; i < 4; i++)
     {
-        if(items[i].object != nullptr)
+        if(items[i].object != nullptr )
         {
-            if (Distance(items[i].object->position, camPos) < 2.0f)
+            if (Distance(items[i].object->position, camPos) < 2.0f && items[i].pickedUp == false)
             {
                 items[i].pickedUp = true;
-                // Pickup
+                items[i].slot = slot;
+                slot++;
+
+                break;
             }
         }
     }
@@ -756,8 +778,9 @@ void HoldItems()
     {
         if (items[i].pickedUp == true)
         {
-            items->object->position = camPos - Multiply(Vector3{0.0f, 0.0f, 1.0f}, RotateXYZ( items->object->rotationVec * DEG2RAD));
-            items->object->rotationVec = ToEuler(FromTo(V3_FORWARD, frontView)) * RAD2DEG;            
+            items[i].object->position = camPos - Multiply(Vector3{0.5f - 1.0f * (items[i].slot / 3.0f), 0.3f,0.5f}, RotateXYZ( items[i].object->rotationVec * DEG2RAD));
+            items[i].object->rotationVec = ToEuler(FromTo(V3_FORWARD, frontView)) * RAD2DEG; 
+            items[i].object->scale = V3_ONE;
         }
     }
 }
