@@ -59,21 +59,26 @@ std::vector<Light> lights;
 std::vector<RenderObject> objects;
 RenderObject* pedestals[4];
 
-Vector3 frontView = V3_FORWARD;
 Vector3 camPos{ -8.0f, 3.0f, -8.0f };
-
-Vector3 camX;
-Vector3 camY;
-Vector3 camZ;
-Matrix camRotation;
-Matrix view;
 
 float camPitch = -20;
 float camYaw = 45;
 
+float itemYawRange = 90;
+float itemPitchFactor = 30;
+float itemRollFactor = 0;
+
+float pitchChangeFactor = 0;
+float customRoll = 0;
+float customPitch = 0;
+
 bool passThroughMiddle = false;
 bool puzzleSolved = false;
 static int invSlot = 0;
+
+Vector3 camX;
+Vector3 camY;
+Vector3 camZ;
 
 int main(void)
 {
@@ -187,9 +192,7 @@ int main(void)
     float near = 0.001f;
     float far = 50.0f;
     float panScale = 0.25f;
-    float planeRotationX = 0;
-    float planeRotationY = 0;
-    float planeRotationZ = 0;
+    Vector3 frontView = V3_FORWARD;
 
     // Whether we render the imgui demo widgets
     bool imguiDemo = false;
@@ -280,10 +283,9 @@ int main(void)
     // Reward
     objects[31] = RenderObject{ {0.0f, -3.2f, 0.0f}, V3_ONE * 1.2f,  {0.0f, 0.0f, 0.0f},   &potMesh, potTex, NULL, false };
     
-    
+
     lights.resize(24);
     lights[0] = Light{ {0.0f, 4.9f, 0.0f},{0.0f, 0.0f, 0.0f} , SPOT_LIGHT, {0.0f, -1.0f, 0.0f},  30, 7 };
-
 
     lights[3] = Light{ camPos, V3_ONE, SPOT_LIGHT, frontView, 35, 20 };
     lights[3].intensity = 0.6f;
@@ -333,7 +335,7 @@ int main(void)
             glfwGetCursorPos(window, &mx, &my);
             if (camToggle)
             {
-                // Looping cam
+                // Looping mouse
                 if (mx > 1280)
                 {
                     glfwSetCursorPos(window, 0.0, my);
@@ -405,7 +407,6 @@ int main(void)
             {
                 mouseDelta = V2_ZERO;
             }
-            frontView = Multiply(V3_FORWARD, camRotation);
 
             camPitch -= mouseDelta.y * panScale;
             if (camPitch > 89)
@@ -418,13 +419,15 @@ int main(void)
             }
 
             camYaw -= mouseDelta.x * panScale;
-            camRotation = ToMatrix(FromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
+            Matrix camRotation = ToMatrix(FromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
 
             camX = { camRotation.m0, camRotation.m1, camRotation.m2 };
             camY = { camRotation.m4, camRotation.m5, camRotation.m6 };
             camZ = { camRotation.m8, camRotation.m9, camRotation.m10 };
+            
+            frontView = Multiply(V3_FORWARD, camRotation);
 
-            // Slows cam when shifted
+            // Speeds cam when shifted
             float camTranslateValue = 0.225;
             if (IsKeyDown(GLFW_KEY_LEFT_SHIFT))
             {
@@ -477,7 +480,7 @@ int main(void)
                 }
                 if (IsKeyDown(GLFW_KEY_A))
                 {
-                    // left
+                    // left    Very normal
                     camPos -= Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * camTranslateValue;
                 }
                 if (IsKeyDown(GLFW_KEY_D))
@@ -485,17 +488,18 @@ int main(void)
                     // right
                     camPos += Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * camTranslateValue;
                 }
+
                 Collision();
             }
         }
-
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         Matrix normal = MatrixIdentity();
         Matrix world = MatrixIdentity();
-        view = LookAt(camPos, camPos - frontView, V3_UP);
+        Matrix view = LookAt(camPos, camPos - frontView, V3_UP);
+
         Matrix proj = Perspective(fov, SCREEN_ASPECT, near, far);
         Matrix mvp = MatrixIdentity();
 
@@ -514,7 +518,7 @@ int main(void)
         GLint u_normalToggle = -2;
 
         // ------------------------------------------------------------------------------------------
-        // ------------------------------------------------------------------------------------------
+        // --------------------------------  VV MY STUFF VV  ----------------------------------------
         // ------------------------------------------------------------------------------------------
 
         /// Victory
@@ -595,7 +599,6 @@ int main(void)
 
         shaderProgram = shaderPhong;
         glUseProgram(shaderProgram);
-        //mvp = world * view * proj;
         
         normal = Transpose(Invert(world));
 
@@ -616,22 +619,21 @@ int main(void)
         glUniform1f(glGetUniformLocation(shaderProgram, "u_heightScale"), heightScale);
         glUniform1i(u_normalToggle, normalToggle);
 
-
-        HoldItems();
-
         // Objects
 
         glUseProgram(shaderPhong);
         mvp = world * view * proj;
 
-        //objects[10].facing = Rotate(objects[10].facing, V3_UP, DEG2RAD * 0.1);
+        HoldItems();
 
         for (int i = 0; i < objects.size(); i++)
         {
             if (objects[i].texture != NULL)
             {
                 world = Scale(objects[i].scale) * // Rotation, because it doensn't like 180
-                    RotateXYZ(objects[i].rotationVec * DEG2RAD) *
+                    Rotate(V3_RIGHT, objects[i].rotationVec.x * DEG2RAD) *
+                    Rotate(V3_UP, objects[i].rotationVec.y * DEG2RAD) *
+                    Rotate(V3_FORWARD, objects[i].rotationVec.z * DEG2RAD) *
                     Translate(objects[i].position);
                 mvp = world * view * proj;
                 objects[i].Render(shaderPhong, &mvp, &world);
@@ -691,16 +693,17 @@ int main(void)
             ImGui::SliderFloat("Cam FOV Blend", &lights[3].FOVbloom, 0.0f, 180.0f - lights[3].FOV);      
             ImGui::NewLine();
 
-            ImGui::SliderFloat3("Object Position",  &objects[10].position.x, -15.0f, 15.0f);
-            ImGui::SliderFloat3("Object Rotation", &objects[10].rotationVec.x, -180.0f, 180.0f);
-            ImGui::SliderFloat3("Object Scale",     &objects[10].scale.x, -10.0f, 10.0f);
+            ImGui::SliderFloat3("Fish Position",  &objects[13].position.x, -15.0f, 15.0f);
+            ImGui::SliderFloat3("Fish Rotation", &objects[13].rotationVec.x, -180.0f, 180.0f);
+            ImGui::SliderFloat3("Fish Scale",     &objects[13].scale.x, -10.0f, 10.0f);
             ImGui::NewLine();
 
-            ImGui::SliderFloat("Plane Rotation X", &planeRotationX, 0.0f, 360.0f);
-            ImGui::SliderFloat("Plane Rotation Y", &planeRotationY, 0.0f, 360.0f);
-            ImGui::SliderFloat("Plane Rotation Z", &planeRotationZ, 0.0f, 360.0f);
-            ImGui::NewLine();
-
+            ImGui::SliderFloat("Pitch Factor", &itemPitchFactor, -1.0f, 1.0f);
+            ImGui::SliderFloat("Roll Factor", &itemRollFactor, -1.0f, 1.0f);
+            ImGui::SliderFloat("Yaw Change Range", &itemYawRange, -180.0f, 180.0f);
+            ImGui::SliderFloat("Pitch Change Factor", &pitchChangeFactor, -3.0f, 3.0f);
+            ImGui::SliderFloat("Custom Roll", &customRoll, -180.0f, 180.0f);
+            ImGui::SliderFloat("Custom Pitch", &customPitch, -180.0f, 180.0f);
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("HeightScale", &heightScale, -0.25f, 0.25f);
@@ -986,9 +989,30 @@ void HoldItems()
     {
         if (items[i].pickedUp == true)
         {
-            items[i].object->position = camPos - Multiply(Vector3{0.5f - 1.0f * (items[i].slot / 3.0f), 0.3f,0.5f}, RotateXYZ( items[i].object->rotationVec * DEG2RAD));
-            items[i].object->rotationVec = ToEuler(FromTo(V3_FORWARD, frontView)) * RAD2DEG; 
+            // TO DO: Make items face cameraPos at all times. 
+            // best way I can think of doing it is modifying the forward vector (WHICH IS KINDA OFF, USE SOMETHING ELSE THAT'S THE REAL VALUE)
+            // Modify it by rotating it to desired locations, and placing items along those new vectors, a set distance
+            // Get camera vector, rotate it in the respective camX & camY axis by item unique pitch/yaw amounts
+            // Normalize it, and multiply by desired length  THIS WILL BE THE POSITION
+            // 
+            // To get updated rotation: 
+            // calc eulers with the up direction in mind, from the camZ to the position vector
+            // this SHOULD only give roll & yaw components, which are the new rotation values
+            // See Unity & phys project for details on quaternions
+
+
+            float pitchOffset = itemPitchFactor ;
+            float yawOffset = itemYawRange * items[i].slot / 3.0f - itemYawRange / 2.0f;
+            float rollOffset = itemRollFactor;// *items[i].slot / 3.0f - itemRollFactor / 2.0f;
             items[i].object->scale = V3_ONE;
+            //  items[i].object->rotationVec = Vector3{ camPitch * pitchOffset , camYaw - yawOffset, camPitch * rollOffset};
+            items[i].object->rotationVec = Vector3{ camPitch , camYaw, 0.0f};
+            items[i].object->position = camPos - Multiply(Vector3{0.5f - 1.0f * (items[i].slot / 3.0f), 0.3f,0.5f},
+                        Rotate(V3_RIGHT ,camPitch * DEG2RAD) *
+                        Rotate(V3_UP ,camYaw * DEG2RAD));
+                        //  Rotate(camX ,camPitch * DEG2RAD) *
+                        //  Rotate(camY ,camYaw * DEG2RAD));
+            //items[i].object->rotationVec = Vector3{ camPitch + pitchChange, camYaw - yawOffset, rollChange };
         }
     }
 }
