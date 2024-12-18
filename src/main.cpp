@@ -619,12 +619,28 @@ int main(void)
         glUniform1f(glGetUniformLocation(shaderProgram, "u_heightScale"), heightScale);
         glUniform1i(u_normalToggle, normalToggle);
 
-        // Objects
-
         glUseProgram(shaderPhong);
         mvp = world * view * proj;
 
         HoldItems();
+
+        // Lights
+
+        lights[3].position = camPos;
+        lights[3].direction = frontView * -1.0f;
+
+        for (int i = 0; i < lights.size(); i++)
+        {
+            lights[i].Render(shaderPhong, i);
+
+            world = Scale(V3_ONE * lights[i].radius) * Translate(lights[i].position);
+            mvp = world * view * proj;
+
+            if (showLights)
+                lights[i].DrawLight(shaderUniformColor, &mvp, sphereMesh);
+        }
+
+        // Objects
 
         for (int i = 0; i < objects.size(); i++)
         {
@@ -649,22 +665,7 @@ int main(void)
             }
         }
 
-        // Lights
 
-        lights[3].position = camPos;
-        lights[3].direction = frontView * -1.0f;
-
-
-        for (int i = 0; i < lights.size(); i++)
-        {
-            lights[i].Render(shaderPhong, i);
-            
-            world = Scale(V3_ONE * lights[i].radius) * Translate(lights[i].position);
-            mvp = world * view * proj;
-
-            if(showLights)
-                lights[i].DrawLight(shaderUniformColor, &mvp, sphereMesh);
-        }
 
         // ------------------------------------------------------------------------------------------
         // ------------------------------------------------------------------------------------------
