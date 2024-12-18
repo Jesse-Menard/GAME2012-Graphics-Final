@@ -372,17 +372,17 @@ int main(void)
 
             if (debugToggle)
             {
-                if (IsKeyPressed(GLFW_KEY_C))
-                    camToggle = !camToggle;
-
                 if (IsKeyPressed(GLFW_KEY_L))
                     showLights = !showLights;
 
                 if (IsKeyPressed(GLFW_KEY_F))
                     freeCam = !freeCam;
+
                 if (IsKeyPressed(GLFW_KEY_T))
                     puzzleSolved = true;
             }
+                if (IsKeyPressed(GLFW_KEY_C))
+                    camToggle = !camToggle;
 
             if (IsKeyPressed(GLFW_KEY_P))
                 PickupAction();
@@ -918,6 +918,19 @@ void LoadTexture(GLuint *texture, const char* filename, bool hasAlpha, bool sing
     pixels = nullptr;
 }
 
+void FindLowestSlot()
+{
+    invSlot = 0;
+    for (int i = -1; i < 4; i++)
+    {
+        if ((i == -1 ? items[3].slot : items[i].slot) == invSlot)
+        {
+            invSlot++;
+            i = -1;
+        }
+    }
+}
+
 void PickupAction()
 {
     for (int i = 0; i < 4; i++)
@@ -929,8 +942,7 @@ void PickupAction()
                 items[i].pickedUp = true;
                 items[i].slot = invSlot;
                 items[i].pedestal = 5;
-                invSlot++;
-
+                FindLowestSlot();
                 break;
             }
         }
@@ -941,10 +953,12 @@ void PlaceItem(int slot)
 {
     for (int i = 0; i < 4; i++)
     {
+        // Distance, ignoring vertical component
         if (Distance(Vector2{ pedestals[i]->position.x, pedestals[i]->position.z }, Vector2{ camPos.x, camPos.z }) < 2.0f)
         {
             for (int k = 0; k < 4; k++)
             {
+                // Pedestal full
                 if (items[k].pedestal == i)
                     return;
             }
@@ -958,19 +972,13 @@ void PlaceItem(int slot)
                     items[k].object->rotationVec = pedestals[i]->rotationVec;
                     items[k].object->scale = V3_ONE * 5.0f;
                     items[k].pedestal = i;
-                    invSlot = 0;
-                    for (int j = 0; j < 4; j++)
-                    {
-                        if (items[j].slot < 5)
-                            invSlot++;
-                        else
-                            break;
-                    }
+                    continue;
                 }
             }
         }
     }
 
+    FindLowestSlot();
     CheckAnswer();
 }
 
