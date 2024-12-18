@@ -65,8 +65,6 @@ float camPitch = -20;
 float camYaw = 45;
 
 float itemYawRange = 90;
-float itemPitchFactor = 30;
-float itemRollFactor = 0;
 
 float pitchChangeFactor = 0;
 float customRoll = 0;
@@ -79,6 +77,8 @@ static int invSlot = 0;
 Vector3 camX;
 Vector3 camY;
 Vector3 camZ;
+Matrix camRotation;
+Vector3 frontView = V3_FORWARD;
 
 int main(void)
 {
@@ -192,7 +192,6 @@ int main(void)
     float near = 0.001f;
     float far = 50.0f;
     float panScale = 0.25f;
-    Vector3 frontView = V3_FORWARD;
 
     // Whether we render the imgui demo widgets
     bool imguiDemo = false;
@@ -419,7 +418,7 @@ int main(void)
             }
 
             camYaw -= mouseDelta.x * panScale;
-            Matrix camRotation = ToMatrix(FromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
+            camRotation = ToMatrix(FromEuler(camPitch * DEG2RAD, camYaw * DEG2RAD, 0.0f));
 
             camX = { camRotation.m0, camRotation.m1, camRotation.m2 };
             camY = { camRotation.m4, camRotation.m5, camRotation.m6 };
@@ -596,6 +595,7 @@ int main(void)
                 ticks++;
         }
 
+        /// Sending to GPU
 
         shaderProgram = shaderPhong;
         glUseProgram(shaderProgram);
@@ -630,11 +630,11 @@ int main(void)
         {
             if (objects[i].texture != NULL)
             {
-                world = Scale(objects[i].scale) * // Rotation, because it doensn't like 180
+                world = Scale(objects[i].scale) * (// Rotation, because it doensn't like 180
                     Rotate(V3_RIGHT, objects[i].rotationVec.x * DEG2RAD) *
                     Rotate(V3_UP, objects[i].rotationVec.y * DEG2RAD) *
-                    Rotate(V3_FORWARD, objects[i].rotationVec.z * DEG2RAD) *
-                    Translate(objects[i].position);
+                    Rotate(V3_FORWARD, objects[i].rotationVec.z * DEG2RAD)
+                    ) * Translate(objects[i].position);
                 mvp = world * view * proj;
                 objects[i].Render(shaderPhong, &mvp, &world);
                 objects[i].Emit();
@@ -678,17 +678,10 @@ int main(void)
         else if (debugToggle)
         {
             ImGui::SliderFloat3("Camera Position", &camPos.x, -15.0f, 15.0f);
-            ImGui::SliderFloat3("Front View", &frontView.x, -1.0f, 1.0f);
+            ImGui::SliderFloat3("Front View?", &frontView.x, -1.0f, 1.0f);
+            ImGui::SliderFloat3("Cam Y-axis", &camY.x, -1.0f, 1.0f);
             ImGui::NewLine();
 
-            ImGui::SliderFloat3("Light Position", &lights[0].position.x, -15.0f, 15.0f);
-            ImGui::SliderFloat3("Light Direction", &lights[0].direction.x, -1.0f, 1.0f);
-            ImGui::SliderFloat3("Light Color", &lights[0].color.x, 0.0f, 1.0f);
-            ImGui::SliderFloat("Light Radius", &lights[0].radius, 0.0f, 15.0f);
-            ImGui::SliderFloat("Light Intensity", &lights[0].intensity, 0.0f, 20.0f);
-            ImGui::SliderFloat("Light FOV", &lights[0].FOV, 0.0f, 180.0f);
-            ImGui::SliderFloat("Light FOV Blend", &lights[0].FOVbloom, 0.0f, 180.0f - lights[0].FOV);     
-            ImGui::SliderInt("Light Type", &lights[0].type, 0, 2);
             ImGui::SliderFloat("Cam FOV", &lights[3].FOV, 0.0f, 180.0f);
             ImGui::SliderFloat("Cam FOV Blend", &lights[3].FOVbloom, 0.0f, 180.0f - lights[3].FOV);      
             ImGui::NewLine();
@@ -698,8 +691,6 @@ int main(void)
             ImGui::SliderFloat3("Fish Scale",     &objects[13].scale.x, -10.0f, 10.0f);
             ImGui::NewLine();
 
-            ImGui::SliderFloat("Pitch Factor", &itemPitchFactor, -1.0f, 1.0f);
-            ImGui::SliderFloat("Roll Factor", &itemRollFactor, -1.0f, 1.0f);
             ImGui::SliderFloat("Yaw Change Range", &itemYawRange, -180.0f, 180.0f);
             ImGui::SliderFloat("Pitch Change Factor", &pitchChangeFactor, -3.0f, 3.0f);
             ImGui::SliderFloat("Custom Roll", &customRoll, -180.0f, 180.0f);
@@ -999,20 +990,38 @@ void HoldItems()
             // calc eulers with the up direction in mind, from the camZ to the position vector
             // this SHOULD only give roll & yaw components, which are the new rotation values
             // See Unity & phys project for details on quaternions
+            //
+            // /\/\/\ Kinda done (good enough) /\/\/\
 
 
-            float pitchOffset = itemPitchFactor ;
-            float yawOffset = itemYawRange * items[i].slot / 3.0f - itemYawRange / 2.0f;
-            float rollOffset = itemRollFactor;// *items[i].slot / 3.0f - itemRollFactor / 2.0f;
-            items[i].object->scale = V3_ONE;
-            //  items[i].object->rotationVec = Vector3{ camPitch * pitchOffset , camYaw - yawOffset, camPitch * rollOffset};
-            items[i].object->rotationVec = Vector3{ camPitch , camYaw, 0.0f};
-            items[i].object->position = camPos - Multiply(Vector3{0.5f - 1.0f * (items[i].slot / 3.0f), 0.3f,0.5f},
-                        Rotate(V3_RIGHT ,camPitch * DEG2RAD) *
-                        Rotate(V3_UP ,camYaw * DEG2RAD));
-                        //  Rotate(camX ,camPitch * DEG2RAD) *
-                        //  Rotate(camY ,camYaw * DEG2RAD));
-            //items[i].object->rotationVec = Vector3{ camPitch + pitchChange, camYaw - yawOffset, rollChange };
+            float distScaleModifier = 0.005;
+            float yawRange = 70;
+            float pitchOffset = -30;
+            float yawOffset = (yawRange * items[i].slot / 3.0f - yawRange / 2.0f) * -1.0f;
+
+            // Get local Z by manipulating camX with desired offsets
+            Vector3 objLocalZ = Multiply(frontView, Rotate(camX, pitchOffset * DEG2RAD) * Rotate(camY, yawOffset * DEG2RAD));
+
+            // Get local X with cross of Z & camY as they're on the 'same' plane
+            Vector3 objLocalX = Cross(objLocalZ, camY) * -1.0f;
+            Vector3 objLocalY = Cross(objLocalZ, objLocalX) * 1.0f;
+
+            Matrix objectRotationMatrix = { objLocalX.x, objLocalX.y, objLocalX.z, 0.0f,
+                                            objLocalY.x, objLocalY.y, objLocalY.z, 0.0f,
+                                            objLocalZ.x, objLocalZ.y, objLocalZ.z, 0.0f,
+                                            0.0f,        0.0f,        0.0f,        1.0f };
+
+            // Some quaternion sorcery.. it works good enough, but it feels like a crime
+            Quaternion objQuat = FromMatrix(objectRotationMatrix);
+            objQuat = { objQuat.y,
+                        objQuat.z,
+                        objQuat.x,
+                        objQuat.w };
+            Vector3 objEuler = ToEuler(objQuat) * RAD2DEG;
+
+            items[i].object->scale = V3_ONE * distScaleModifier;
+            items[i].object->rotationVec = Vector3{ -objEuler.z, -objEuler.x, 0.0f };
+            items[i].object->position = camPos - objLocalZ * distScaleModifier;
         }
     }
 }
