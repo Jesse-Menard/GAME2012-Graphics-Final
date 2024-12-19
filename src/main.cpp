@@ -184,6 +184,15 @@ int main(void)
     GLuint potTex = GL_NONE;
     LoadTexture(&potTex, "./assets/textures/POT_base.png", true);
 
+    // Custom normals
+    GLuint elephantL, elephantR, horseR, dragonL, dragonR, fishL = GL_NONE;
+    LoadTexture(&elephantL, "./assets/textures/stoneNormalElephantL.jpg");
+    LoadTexture(&elephantR, "./assets/textures/stoneNormalElephantR.jpg");
+    LoadTexture(&horseR, "./assets/textures/stoneNormalHorseR.jpg");
+    LoadTexture(&dragonL, "./assets/textures/stoneNormalDragonL.jpg");
+    LoadTexture(&dragonR, "./assets/textures/stoneNormalDragonR.jpg");
+    LoadTexture(&fishL, "./assets/textures/stoneNormalFishL.jpg");
+
     float fov = 75.0f * DEG2RAD;
     float left = -1.0f;
     float right = 1.0f;
@@ -217,7 +226,7 @@ int main(void)
     CreateMesh(&pedestalMesh, "./assets/meshes/pedestal.obj");
     CreateMesh(&potMesh, "./assets/meshes/potemkin.obj");
 
-    objects.resize(35); // positions from bottom corner of obj, will center if have time (doubt, heh) 
+    objects.resize(40); // positions from bottom corner of obj, will center if have time (doubt, heh) 
     objects[0] = RenderObject{ {-15.0f, 0.0f, 15.0f},  {30.0f, 30.0f, 1.0f}, {-90.0f,0.0f,0.0f},  &insidePlaneMesh, floorTex, floorNormal, NULL, false};
     objects[1] = RenderObject{ {-15.0f, 5.0f, -15.0f}, {30.0f, 30.0f, 0.0f}, {90.0f, 0.0f, 0.0f}, &insidePlaneMesh, floorTex, floorNormal, NULL, false};
     
@@ -228,14 +237,14 @@ int main(void)
     objects[5] = RenderObject{ {15.0f, 0.0f, -15.0f},  {30.0f, 5.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, &outsidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
     
     // Inside Walls
-    objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f},  {10.0f, 5.0f, 1.0f}, V3_ZERO,              &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
+    objects[6] = RenderObject{ {-5.0f, 0.0f, 5.0f},  {10.0f, 5.0f, 1.0f},  V3_ZERO,              &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
     objects[7] = RenderObject{ {5.0f, 0.0f, -5.0f},  {10.0f, 5.0f, 1.0f}, {0.0f, 180.0f, 0.0f}, &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
     objects[8] = RenderObject{ {5.0f, 0.0f, 5.0f},   {10.0f, 5.0f, 1.0f}, {0.0f, 90.0f, 0.0f},  &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
     objects[9] = RenderObject{ {-5.0f, 0.0f, -5.0f}, {10.0f, 5.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, &insidePlaneMesh, texStone, texStoneNormal, texStoneHeight, false};
     
     // Items
-    objects[10] = RenderObject{ {14.0f, 0.0f, 0.0f},   V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &horseMesh,    horseTex,    horseNormal,    false };
-    objects[11] = RenderObject{ {0.0f, 0.0f, 14.0f}, V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &elephantMesh, elephantTex, elephantNormal, false};
+    objects[10] = RenderObject{ {14.0f, 0.0f, 0.0f},  V3_ONE * 5.0f, {0.0f, -90.0f, 0.0f}, &horseMesh,    horseTex,    horseNormal,    false };
+    objects[11] = RenderObject{ {0.0f, 0.0f, 14.0f},  V3_ONE * 5.0f, {0.0f, 180.0f, 0.0f}, &elephantMesh, elephantTex, elephantNormal, false};
     objects[12] = RenderObject{ {-14.0f, 0.0f, 0.0f}, V3_ONE * 5.0f, {0.0f, 90.0f, 0.0f}, &dragonMesh, dragonTex, dragonNormal, false};
     objects[13] = RenderObject{ {0.0f, 0.0f, -14.0f}, V3_ONE * 5.0f, V3_ZERO, &fishMesh, fishTex, fishNormal, false };
     
@@ -282,6 +291,21 @@ int main(void)
     // Reward
     objects[31] = RenderObject{ {0.0f, -3.2f, 0.0f}, V3_ONE * 1.2f,  {0.0f, 0.0f, 0.0f},   &potMesh, potTex, NULL, false };
     
+    // Custom Walls
+    objects[32] = RenderObject{ {-14.99f, 0.0f, 0.0f},   {5.0f, 5.0f, 1.0f}, {0.0f, 90.0f, 0.0f}, &insidePlaneMesh, texStone, elephantR, texStoneHeight, false };
+    objects[33] = RenderObject{ {-14.99f, 0.0f, 5.0f},  {5.0f, 5.0f, 1.0f}, {0.0f, 90.0f, 0.0f}, &insidePlaneMesh, texStone, elephantL, texStoneHeight, false };
+    objects[34] = RenderObject{ {0.0f,  0.0f, 14.99f},  {5.0f, 5.0f, 1.0f}, {0.0f, 180.0f, 0.0f}, &insidePlaneMesh, texStone, horseR, texStoneHeight, false };
+    objects[35] = RenderObject{ {5.0f,   0.0f, 14.99f},  {5.0f, 5.0f, 1.0f}, {0.0f, 180.0f, 0.0f}, &insidePlaneMesh, texStone, dragonL, texStoneHeight, false };
+    objects[36] = RenderObject{ {14.99f,  0.0f, 0.0f},   {5.0f, 5.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, &insidePlaneMesh, texStone, horseR, texStoneHeight, false };
+    objects[37] = RenderObject{ {14.99f,  0.0f, -5.0f},  {5.0f, 5.0f, 1.0f}, {0.0f, -90.0f, 0.0f}, &insidePlaneMesh, texStone, fishL, texStoneHeight, false };
+    objects[38] = RenderObject{ {0.0f,   0.0f, -14.99f}, {5.0f, 5.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, &insidePlaneMesh, texStone, dragonR, texStoneHeight, false };
+    objects[39] = RenderObject{ {-5.0f,  0.0f, -14.99f}, {5.0f, 5.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, &insidePlaneMesh, texStone, fishL, texStoneHeight, false };
+
+
+
+
+
+
 
     lights.resize(24);
     lights[0] = Light{ {0.0f, 4.9f, 0.0f},{0.0f, 0.0f, 0.0f} , SPOT_LIGHT, {0.0f, -1.0f, 0.0f},  30, 7 };
@@ -1001,7 +1025,6 @@ void HoldItems()
             // See Unity & phys project for details on quaternions
             //
             // /\/\/\ Kinda done (good enough) /\/\/\
-
 
             float distScaleModifier = 0.005;
             float yawRange = 70;
