@@ -427,42 +427,42 @@ int main(void)
             frontView = Multiply(V3_FORWARD, camRotation);
 
             // Speeds cam when shifted
-            float camTranslateValue = 0.225;
+            float moveSpeed = 0.225;
             if (IsKeyDown(GLFW_KEY_LEFT_SHIFT))
             {
-                camTranslateValue = 0.4;
+                moveSpeed = 0.4;
             }
             if (freeCam)
             {
                 if (IsKeyDown(GLFW_KEY_W))
                 {
                     // forwards
-                    camPos -= camZ * camTranslateValue;
+                    camPos -= camZ * moveSpeed;
                 }
                 if (IsKeyDown(GLFW_KEY_S))
                 {
                     // back
-                    camPos += camZ * camTranslateValue;
+                    camPos += camZ * moveSpeed;
                 }
                 if (IsKeyDown(GLFW_KEY_A))
                 {
                     // left
-                    camPos -= camX * camTranslateValue;
+                    camPos -= camX * moveSpeed;
                 }
                 if (IsKeyDown(GLFW_KEY_D))
                 {
                     // right
-                    camPos += camX * camTranslateValue;
+                    camPos += camX * moveSpeed;
                 }
                 if (IsKeyDown(GLFW_KEY_E))
                 {
                     // up
-                    camPos += camY * camTranslateValue;
+                    camPos += camY * moveSpeed;
                 }
                 if (IsKeyDown(GLFW_KEY_Q))
                 {
                     // down
-                    camPos -= camY * camTranslateValue;
+                    camPos -= camY * moveSpeed;
                 }
             }
             else
@@ -470,22 +470,22 @@ int main(void)
                 if (IsKeyDown(GLFW_KEY_W))
                 {
                     // forwards
-                    camPos -= Normalize(Vector3{ frontView.x, 0.0f,frontView.z }) * camTranslateValue;
+                    camPos -= Normalize(Vector3{ frontView.x, 0.0f,frontView.z }) * moveSpeed;
                 }
                 if (IsKeyDown(GLFW_KEY_S))
                 {
                     // back
-                    camPos += Normalize(Vector3{ frontView.x, 0.0f,frontView.z }) * camTranslateValue;
+                    camPos += Normalize(Vector3{ frontView.x, 0.0f,frontView.z }) * moveSpeed;
                 }
                 if (IsKeyDown(GLFW_KEY_A))
                 {
                     // left    Very normal
-                    camPos -= Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * camTranslateValue;
+                    camPos -= Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * moveSpeed;
                 }
                 if (IsKeyDown(GLFW_KEY_D))
                 {
                     // right
-                    camPos += Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * camTranslateValue;
+                    camPos += Normalize(Multiply(Normalize(Vector3{ frontView.x, 0.0f, frontView.z }), RotateY(90 * DEG2RAD))) * moveSpeed;
                 }
 
                 Collision();
@@ -1049,21 +1049,57 @@ void CheckAnswer()
 
 void Collision()
 {
-    if (camPos.x > 14.5f)
-        camPos.x = 14.5f;
-    if (camPos.x < -14.5f)
-        camPos.x = -14.5f;
-    if (camPos.z > 14.5f)
-        camPos.z = 14.5f;
-    if (camPos.z < -14.5f)
-        camPos.z = -14.5f;
+    float playerRadius = 0.6f;
 
-    if (camPos.x > -5.5f && camPos.x < 5.5f &&
-        camPos.z > -5.5f && camPos.z < 5.5f && !passThroughMiddle)
+    // Outside Walls
+    if (camPos.x > 15.0f - playerRadius)
+        camPos.x = 15.0f - playerRadius;
+    if (camPos.x < -15.0f + playerRadius)
+        camPos.x = -15.0f + playerRadius;
+    if (camPos.z > 15.0f - playerRadius)
+        camPos.z = 15.0f - playerRadius;
+    if (camPos.z < -15.0f + playerRadius)
+        camPos.z = -15.0f + playerRadius;
+
+    // Inside Walls
+    if (camPos.x > -5.0f - playerRadius && camPos.x < 5.0f + playerRadius &&
+        camPos.z > -5.0f - playerRadius && camPos.z < 5.0f + playerRadius && !passThroughMiddle)
     {
         if (abs(camPos.x) > abs(camPos.z))
-            camPos.x = camPos.x > 0 ? 5.5f : -5.5f;
+            camPos.x = camPos.x > 0 ? 5.0f + playerRadius : -5.0f - playerRadius;
         else
-            camPos.z = camPos.z > 0 ? 5.5f : -5.5f;
+            camPos.z = camPos.z > 0 ? 5.0f + playerRadius : -5.0f - playerRadius;
+    }
+
+    // Pillars
+    float pillarRadius = 0.95f;
+    for (int i = 18; i < 26; i++)
+    {
+        Vector2 displacement = Vector2{ objects[i].position.x, objects[i].position.z } - Vector2{ camPos.x, camPos.z };
+        float distance = sqrt(displacement.x * displacement.x + displacement.y * displacement.y);
+
+        if ( distance < pillarRadius + playerRadius)
+        {
+            Vector2 offset = Normalize(displacement) * ((pillarRadius + playerRadius) - distance);
+            camPos -= Vector3{ offset.x, 0.0f, offset.y };
+        }
+    }
+
+    // Pedestals
+    float pedestalLW = 0.5f;
+    for (int i = 0; i < 4; i++)
+    {
+        Vector2 clampedPlayerPosition = Vector2{ Clamp(camPos.x, pedestals[i]->position.x - pedestalLW, pedestals[i]->position.x + pedestalLW),
+                                                 Clamp(camPos.z, pedestals[i]->position.z - pedestalLW, pedestals[i]->position.z + pedestalLW) };
+
+        Vector2 displacement = Vector2{ camPos.x, camPos.z } - Vector2{ clampedPlayerPosition.x, clampedPlayerPosition.y };
+
+        float distance = sqrt(displacement.x * displacement.x + displacement.y * displacement.y);
+
+        if (distance < playerRadius)
+        {
+            Vector2 offset = Normalize(displacement) * (playerRadius - distance);
+            camPos += Vector3{ offset.x, 0.0f, offset.y };
+        }
     }
 }
