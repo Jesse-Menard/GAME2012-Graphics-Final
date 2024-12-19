@@ -1119,7 +1119,7 @@ void Collision()
 
         float distance = sqrt(displacement.x * displacement.x + displacement.y * displacement.y);
 
-        if (distance < playerRadius)
+        if (distance < playerRadius && pedestals[i]->position.y > -3.5f)
         {
             Vector2 offset = Normalize(displacement) * (playerRadius - distance);
             camPos += Vector3{ offset.x, 0.0f, offset.y };
