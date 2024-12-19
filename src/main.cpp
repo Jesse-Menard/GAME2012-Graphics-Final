@@ -208,10 +208,6 @@ int main(void)
     bool debugToggle = false;
     bool freeCam = false;
     bool showLights = false;
-    int normalToggle = false;
-
-    // ENABLE BACKFACE CULLING
-    glEnable(GL_CULL_FACE);
 
     Mesh sphereMesh, insidePlaneMesh, outsidePlaneMesh, horseMesh, elephantMesh, sconceMesh, dragonMesh, fishMesh, pillarMesh, pedestalMesh, potMesh;
     CreateMesh(&sphereMesh, SPHERE);
@@ -423,9 +419,6 @@ int main(void)
             if (IsKeyPressed(GLFW_KEY_4))
                 PlaceItem(3);
 
-            if (IsKeyPressed(GLFW_KEY_N))
-                normalToggle = !normalToggle; // I know what I'm doing intellisense, go away >:(
-
             if (!camToggle)
             {
                 mouseDelta = V2_ZERO;
@@ -538,7 +531,6 @@ int main(void)
         
         GLint u_ambientFactor = -2;
         GLint u_diffuseFactor = -2;
-        GLint u_normalToggle = -2;
 
         // ------------------------------------------------------------------------------------------
         // --------------------------------  VV MY STUFF VV  ----------------------------------------
@@ -632,7 +624,6 @@ int main(void)
         
         u_ambientFactor = glGetUniformLocation(shaderProgram, "u_ambientFactor");
         u_diffuseFactor = glGetUniformLocation(shaderProgram, "u_diffuseFactor");
-        u_normalToggle = glGetUniformLocation(shaderProgram, "u_normalToggle");
         
         glUniformMatrix3fv(u_normal, 1, GL_FALSE, ToFloat9(normal).v);
 
@@ -641,7 +632,6 @@ int main(void)
         glUniform1f(u_ambientFactor, ambientFactor);
         glUniform1f(u_diffuseFactor, diffuseFactor);
         glUniform1f(glGetUniformLocation(shaderProgram, "u_heightScale"), heightScale);
-        glUniform1i(u_normalToggle, normalToggle);
 
         glUseProgram(shaderPhong);
         mvp = world * view * proj;
@@ -723,7 +713,6 @@ int main(void)
             ImGui::SliderFloat("Ambient", &ambientFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("Diffuse", &diffuseFactor, 0.0f, 1.0f);
             ImGui::SliderFloat("HeightScale", &heightScale, -0.25f, 0.25f);
-            ImGui::Checkbox("Normal Toggle", (bool*)&normalToggle); ImGui::SameLine();
             ImGui::Checkbox("Show Lights", &showLights);ImGui::SameLine();
             ImGui::Checkbox("Free Cam", &freeCam);
 

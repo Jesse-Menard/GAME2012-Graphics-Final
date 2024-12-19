@@ -13,7 +13,6 @@ uniform vec3 u_cameraPosition;
 uniform float u_ambientFactor;
 uniform float u_diffuseFactor;
 uniform float u_heightScale;
-uniform int u_normalToggle;
 
 uniform sampler2D u_tex;
 uniform sampler2D u_spec;
@@ -116,11 +115,11 @@ void main()
     for( int i = 0; i < 24; i++)
     {
         if(u_lights[i].type == 0)
-            lighting += direction_light(u_lights[i].direction, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale);
+            lighting += direction_light(u_lights[i].direction, normalMap, u_cameraPosition, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale);
         if(u_lights[i].type == 1)
-            lighting += point_light(position, ((u_normalToggle > 0) ? normal : normalMap) , u_cameraPosition, u_lights[i].position, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale, u_lights[i].radius);
+            lighting += point_light(position, normalMap , u_cameraPosition, u_lights[i].position, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale, u_lights[i].radius);
         if(u_lights[i].type == 2)
-            lighting += spot_light(position, u_lights[i].direction, ((u_normalToggle > 0) ? normal : normalMap), u_cameraPosition, u_lights[i].position, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale, u_lights[i].radius, u_lights[i].FOV, u_lights[i].FOVbloom);
+            lighting += spot_light(position, u_lights[i].direction, normalMap, u_cameraPosition, u_lights[i].position, u_lights[i].color, u_ambientFactor, u_diffuseFactor, u_lights[i].specularScale, u_lights[i].radius, u_lights[i].FOV, u_lights[i].FOVbloom);
 
         lighting *= u_lights[i].intensity;
     }
